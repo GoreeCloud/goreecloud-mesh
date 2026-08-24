@@ -5,9 +5,9 @@ import "time"
 type HealthState string
 
 const (
-	HealthUnknown   HealthState = "unknown"
-	HealthHealthy   HealthState = "healthy"
-	HealthDegraded  HealthState = "degraded"
+	HealthUnknown     HealthState = "unknown"
+	HealthHealthy     HealthState = "healthy"
+	HealthDegraded    HealthState = "degraded"
 	HealthUnavailable HealthState = "unavailable"
 )
 
