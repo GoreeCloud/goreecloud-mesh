@@ -1,0 +1,50 @@
+{
+  "schema_version": 1,
+  "project": "GoreeCloud Mesh",
+  "repository": "GoreeCloud/goreecloud-mesh",
+  "development_model": "original-native-goreecloud",
+  "lifecycle": "development",
+  "stable_eligible": false,
+  "systems": {
+    "glaze_ui": {
+      "required": true,
+      "state": "pending",
+      "evidence": [
+        "Mesh Console is documented as a required Glaze UI consumer but is not yet implemented."
+      ]
+    },
+    "wardveil_security": {
+      "required": true,
+      "state": "pending",
+      "evidence": [
+        "The source foundation defaults to loopback-only HTTP, fail-closed relationship policy, bounded JSON input, restrictive state-file permissions, and explicit authority boundaries; the approved Wardveil contract adapter and runtime evidence remain pending."
+      ]
+    },
+    "privacy_shield": {
+      "required": true,
+      "state": "pending",
+      "evidence": [
+        "The architecture limits Mesh to coordination metadata and prohibits unnecessary application payload centralization; the approved Privacy Shield contract adapter, retention controls, and runtime evidence remain pending."
+      ]
+    },
+    "everkeep": {
+      "required": true,
+      "state": "pending",
+      "evidence": [
+        "The initial store uses atomic durable JSON persistence; Everkeep backup classification, export, restore, corruption handling, and recovery-evidence acceptance remain pending."
+      ]
+    }
+  },
+  "acceptance_gates": [
+    "GoreeCloud Identity-backed service authentication and authorization",
+    "Wardveil Security contract implementation and runtime evidence",
+    "Privacy Shield contract implementation and retention/privacy evidence",
+    "Everkeep backup/export/restore contract and recovery evidence",
+    "Current Stable Glaze UI Mesh Console implementation and accessibility acceptance",
+    "Monitoring health adapter and health-evidence provenance",
+    "Gateway and Network enforcement-state adapters",
+    "Durable external event delivery semantics",
+    "Target-environment runtime, rollback, backup, restore, and failure-mode acceptance",
+    "Production deployment and publication approval"
+  ]
+}
