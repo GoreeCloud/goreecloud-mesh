@@ -5,33 +5,42 @@
   "development_model": "original-native-goreecloud",
   "lifecycle": "development",
   "stable_eligible": false,
+  "source_contract_catalog": {
+    "state": "validated",
+    "api": "GET /v1/platforms",
+    "scope": "authority metadata and expected contract-source discovery only; runtime conformance remains independently evidence-gated"
+  },
   "systems": {
     "glaze_ui": {
       "required": true,
       "state": "pending",
       "evidence": [
-        "Mesh Console is documented as a required Glaze UI consumer but is not yet implemented."
+        "Mesh now catalogs Glaze UI as the authority for design, interaction, accessibility, adaptive behavior, and visual presentation and points consumers to the Glaze UI conformance contract.",
+        "Mesh Console is documented as a required current-Stable Glaze UI consumer but is not yet implemented or runtime-accepted."
       ]
     },
     "wardveil_security": {
       "required": true,
       "state": "pending",
       "evidence": [
-        "The source foundation defaults to loopback-only HTTP, fail-closed relationship policy, bounded JSON input, restrictive state-file permissions, and explicit authority boundaries; the approved Wardveil contract adapter and runtime evidence remain pending."
+        "Mesh now catalogs Wardveil Security as the authority for security/protection status, evidence semantics, and protection presentation and records the canonical Wardveil status schema as the expected contract source.",
+        "The source foundation defaults to loopback-only HTTP, fail-closed relationship policy, bounded JSON input, restrictive state-file permissions, explicit authority boundaries, and a source-level trust abstraction; approved Wardveil runtime adapter evidence remains pending."
       ]
     },
     "privacy_shield": {
       "required": true,
       "state": "pending",
       "evidence": [
-        "The architecture limits Mesh to coordination metadata and prohibits unnecessary application payload centralization; the approved Privacy Shield contract adapter, retention controls, and runtime evidence remain pending."
+        "Mesh now catalogs GoreeCloud Privacy Shield as the privacy authority and records the platform privacy contract as the expected source for adapter/conformance integration.",
+        "The architecture limits Mesh to coordination metadata, prohibits unnecessary application payload centralization, and includes source-level privacy/retention governance; approved Privacy Shield runtime adapter and retention evidence remain pending."
       ]
     },
     "everkeep": {
       "required": true,
       "state": "pending",
       "evidence": [
-        "The initial store uses atomic durable JSON persistence; Everkeep backup classification, export, restore, corruption handling, and recovery-evidence acceptance remain pending."
+        "Mesh now catalogs Everkeep as the authority for resilience, recovery, preservation, portability, succession, and digital-legacy evidence and records the continuity status schema as the expected contract source.",
+        "The initial store uses atomic durable JSON persistence and source-level recovery readiness requires export, backup, restore, and verification evidence; production backup/export/restore and recovery acceptance remain pending."
       ]
     }
   },
