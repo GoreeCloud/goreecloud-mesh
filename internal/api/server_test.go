@@ -21,6 +21,30 @@ func testHandler(t *testing.T) http.Handler {
 	return New(mesh.New(state), contracts.NewRegistry(), nil)
 }
 
+func TestPlatformCatalogAPI(t *testing.T) {
+	h := testHandler(t)
+	request := httptest.NewRequest(http.MethodGet, "/v1/platforms", nil)
+	response := httptest.NewRecorder()
+	h.ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("status = %d body=%s", response.Code, response.Body.String())
+	}
+
+	var body struct {
+		Systems []contracts.CatalogEntry `json:"systems"`
+		Note    string                   `json:"note"`
+	}
+	if err := json.Unmarshal(response.Body.Bytes(), &body); err != nil {
+		t.Fatal(err)
+	}
+	if len(body.Systems) != len(contracts.Mandatory()) {
+		t.Fatalf("systems = %d mandatory = %d", len(body.Systems), len(contracts.Mandatory()))
+	}
+	if body.Note == "" {
+		t.Fatal("authority-boundary note is required")
+	}
+}
+
 func TestContractStableEligibilityAPI(t *testing.T) {
 	h := testHandler(t)
 
