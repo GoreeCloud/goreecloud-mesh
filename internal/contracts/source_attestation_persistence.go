@@ -5,6 +5,7 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"sort"
 )
 
 // NewPersistentSourceAttestationRegistry loads a source-attestation registry
@@ -36,6 +37,9 @@ func NewPersistentSourceAttestationRegistry(path string) (*SourceAttestationRegi
 		if !ok {
 			return nil, errors.New("persisted source attestation references unknown platform")
 		}
+		if _, exists := r.attestations[attestation.Platform]; exists {
+			return nil, errors.New("persisted source attestations contain duplicate platform")
+		}
 		if err := ValidateSourceAttestation(entry, attestation); err != nil {
 			return nil, err
 		}
@@ -55,6 +59,7 @@ func (r *SourceAttestationRegistry) persistLocked() error {
 	for _, attestation := range r.attestations {
 		items = append(items, attestation)
 	}
+	sort.Slice(items, func(i, j int) bool { return items[i].Platform < items[j].Platform })
 	b, err := json.MarshalIndent(items, "", "  ")
 	if err != nil {
 		return err
