@@ -1,0 +1,5 @@
+mesh-state.json
+mesh-state.json.tmp
+mesh
+*.test
+coverage.out
