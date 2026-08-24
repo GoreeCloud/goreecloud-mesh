@@ -15,7 +15,8 @@ The initial native foundation provides:
 - **Mesh Nodes** — service/node identity and operational-state records through the registry model.
 - **Mesh Connections** — explicit, versionable relationships between registered components.
 - **Mesh Platform Catalog** — machine-readable authority and contract-source metadata for Glaze UI, Wardveil Security, Privacy Shield, and Everkeep without transferring those systems' authority into Mesh.
-- **Mesh API** — private-first HTTP interface for discovery, registration, graph inspection, platform catalog inspection, and policy evaluation.
+- **Mesh Platform Status** — read-only joined authority/evidence status that makes missing and non-validated platform evidence explicit and fail-closed.
+- **Mesh API** — private-first HTTP interface for discovery, registration, graph inspection, platform catalog/status inspection, and policy evaluation.
 - **Mesh Console** — planned Glaze UI administrative experience; not yet represented as complete.
 
 ## Architecture principles
@@ -51,6 +52,7 @@ Key initial endpoints:
 - `GET /v1/graph/impact?id=<service-id>`
 - `POST /v1/evaluate`
 - `GET /v1/platforms`
+- `GET /v1/platforms/status`
 - `GET /v1/contracts`
 - `POST /v1/contracts`
 - `GET /v1/contracts/stable-eligibility`
