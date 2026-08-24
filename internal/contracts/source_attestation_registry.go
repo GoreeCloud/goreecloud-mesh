@@ -11,6 +11,7 @@ import (
 // contract evidence so source provenance cannot satisfy runtime or Stable gates.
 type SourceAttestationRegistry struct {
 	mu           sync.RWMutex
+	path         string
 	attestations map[Platform]SourceAttestation
 }
 
@@ -28,7 +29,17 @@ func (r *SourceAttestationRegistry) Record(attestation SourceAttestation) (Sourc
 	}
 
 	r.mu.Lock()
+	previous, existed := r.attestations[attestation.Platform]
 	r.attestations[attestation.Platform] = attestation
+	if err := r.persistLocked(); err != nil {
+		if existed {
+			r.attestations[attestation.Platform] = previous
+		} else {
+			delete(r.attestations, attestation.Platform)
+		}
+		r.mu.Unlock()
+		return SourceAttestation{}, err
+	}
 	r.mu.Unlock()
 	return attestation, nil
 }
