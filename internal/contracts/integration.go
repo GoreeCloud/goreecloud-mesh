@@ -4,10 +4,10 @@ package contracts
 // latest bounded evidence for one mandatory integral platform system.
 type IntegrationStatus struct {
 	CatalogEntry
-	EvidencePresent    bool      `json:"evidence_present"`
-	EvidenceState      State     `json:"evidence_state"`
-	StableGateSatisfied bool     `json:"stable_gate_satisfied"`
-	Evidence           *Evidence `json:"evidence,omitempty"`
+	EvidencePresent     bool      `json:"evidence_present"`
+	EvidenceState       State     `json:"evidence_state"`
+	StableGateSatisfied bool      `json:"stable_gate_satisfied"`
+	Evidence            *Evidence `json:"evidence,omitempty"`
 }
 
 // IntegrationStatuses returns one deterministic status record for every
