@@ -180,6 +180,14 @@ The catalog currently identifies:
 
 The endpoint is descriptive and coordination-oriented. Mesh does not acquire the technical authority of a listed system merely because it catalogs or consumes that system's contract.
 
+### `GET /v1/platforms/status`
+
+Returns one read-only integration-status record for each mandatory platform system by joining the canonical authority catalog with the latest bounded runtime contract evidence recorded in Mesh.
+
+Each status contains catalog metadata, `evidence_present`, `evidence_state`, `stable_gate_satisfied`, and the current bounded evidence record when present. Missing evidence is represented explicitly as `pending` with `stable_gate_satisfied: false`; it is never omitted or treated as healthy. The top-level `stable_eligible` field remains true only when all four mandatory systems have validated evidence.
+
+This endpoint is an inspection and coordination view. It does not convert Mesh into the authority for design, security, privacy, or resilience, and it does not authorize release, deployment, production acceptance, or Stable promotion.
+
 ## Runtime platform contracts
 
 ### `GET /v1/contracts`
