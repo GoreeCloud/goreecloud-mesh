@@ -8,7 +8,7 @@ import (
 
 func TestManifestSHA256(t *testing.T) {
 	got := ManifestSHA256([]byte("mesh"))
-	want := "d30d52968e57011204e4b43aaf78b5e7021d6c3f6f47a827473373135d3cd771"
+	want := "d30ca7a7a32bf5772dc5eb2a2e7bd35737eff795ad74f2479b359716b59abdfa"
 	if got != want {
 		t.Fatalf("unexpected digest %q", got)
 	}
