@@ -45,6 +45,39 @@ func TestPlatformCatalogAPI(t *testing.T) {
 	}
 }
 
+func TestPlatformStatusAPIFailsClosed(t *testing.T) {
+	h := testHandler(t)
+	request := httptest.NewRequest(http.MethodGet, "/v1/platforms/status", nil)
+	response := httptest.NewRecorder()
+	h.ServeHTTP(response, request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("status = %d body=%s", response.Code, response.Body.String())
+	}
+
+	var body struct {
+		StableEligible bool                          `json:"stable_eligible"`
+		Systems        []contracts.IntegrationStatus `json:"systems"`
+		Note           string                        `json:"note"`
+	}
+	if err := json.Unmarshal(response.Body.Bytes(), &body); err != nil {
+		t.Fatal(err)
+	}
+	if body.StableEligible {
+		t.Fatal("empty runtime evidence must fail closed")
+	}
+	if len(body.Systems) != len(contracts.Mandatory()) {
+		t.Fatalf("systems = %d mandatory = %d", len(body.Systems), len(contracts.Mandatory()))
+	}
+	for _, status := range body.Systems {
+		if status.EvidencePresent || status.EvidenceState != contracts.Pending || status.StableGateSatisfied {
+			t.Fatalf("unexpected initial status for %s: %+v", status.Platform, status)
+		}
+	}
+	if body.Note == "" {
+		t.Fatal("fail-closed boundary note is required")
+	}
+}
+
 func TestContractStableEligibilityAPI(t *testing.T) {
 	h := testHandler(t)
 
