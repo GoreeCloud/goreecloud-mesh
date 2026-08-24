@@ -39,6 +39,7 @@ func New(m *mesh.Mesh, registry *contracts.Registry, logger *slog.Logger) http.H
 	mux.HandleFunc("GET /v1/graph/impact", s.impact)
 	mux.HandleFunc("POST /v1/evaluate", s.evaluate)
 	mux.HandleFunc("GET /v1/platforms", s.platforms)
+	mux.HandleFunc("GET /v1/platforms/status", s.platformStatuses)
 	mux.HandleFunc("GET /v1/contracts", s.contractsList)
 	mux.HandleFunc("POST /v1/contracts", s.contractsRecord)
 	mux.HandleFunc("GET /v1/contracts/stable-eligibility", s.contractsStableEligibility)
@@ -125,6 +126,14 @@ func (s *Server) platforms(w http.ResponseWriter, _ *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]any{
 		"systems": contracts.Catalog(),
 		"note":    "Mesh coordinates these systems but does not assume their authority.",
+	})
+}
+
+func (s *Server) platformStatuses(w http.ResponseWriter, _ *http.Request) {
+	writeJSON(w, http.StatusOK, map[string]any{
+		"stable_eligible": s.contracts.StableEligible(),
+		"systems":         s.contracts.IntegrationStatuses(),
+		"note":            "Missing or non-validated evidence fails closed; source status does not authorize production or Stable promotion.",
 	})
 }
 
