@@ -169,7 +169,7 @@ Mesh Policy is one authorization input, not a substitute for application authori
 
 ### `GET /v1/platforms`
 
-Returns the canonical Mesh-side catalog of mandatory integral platform systems. Each entry records the system identifier, display name, repository, authority boundary, expected contract source, and whether the system is required.
+Returns the canonical Mesh-side catalog of mandatory integral platform systems. Each entry records the system identifier, display name, repository, authority boundary, expected contract source, integration-manifest path, and whether the system is required.
 
 The catalog currently identifies:
 
@@ -184,9 +184,49 @@ The endpoint is descriptive and coordination-oriented. Mesh does not acquire the
 
 Returns one read-only integration-status record for each mandatory platform system by joining the canonical authority catalog with the latest bounded runtime contract evidence recorded in Mesh.
 
-Each status contains catalog metadata, `evidence_present`, `evidence_state`, `stable_gate_satisfied`, and the current bounded evidence record when present. Missing evidence is represented explicitly as `pending` with `stable_gate_satisfied: false`; it is never omitted or treated as healthy. The top-level `stable_eligible` field remains true only when all four mandatory systems have validated evidence.
+The response also includes `source_attestations_validated`, which reports whether all four mandatory platform manifests have separately validated source attestations. That field is independent of `stable_eligible`; source provenance cannot satisfy runtime evidence requirements.
 
-This endpoint is an inspection and coordination view. It does not convert Mesh into the authority for design, security, privacy, or resilience, and it does not authorize release, deployment, production acceptance, or Stable promotion.
+Missing runtime evidence is represented explicitly as `pending` with `stable_gate_satisfied: false`; it is never omitted or treated as healthy. This endpoint does not convert Mesh into the authority for design, security, privacy, or resilience, and it does not authorize release, deployment, production acceptance, or Stable promotion.
+
+## Platform source attestations
+
+### `GET /v1/platforms/source-attestations`
+
+Returns the current source-provenance attestations and `all_validated`, a fail-closed completeness result for the four mandatory integral platform systems.
+
+A source attestation binds a reviewed platform integration manifest to:
+
+- its canonical platform and producer repository;
+- the exact full producer Git revision;
+- the canonical integration-manifest path;
+- the SHA-256 digest of the exact reviewed manifest bytes;
+- source-validation state;
+- validation workflow and run evidence when validated; and
+- the observation time.
+
+Source attestations contain source provenance only. They do not imply runtime acceptance, production acceptance, deployment authorization, release authorization, or Stable qualification.
+
+### `POST /v1/platforms/source-attestations`
+
+Records or replaces the latest source attestation for one mandatory platform. The request is validated against the canonical Mesh platform catalog and fails closed on repository mismatches, manifest-path mismatches, malformed revisions or digests, invalid states, missing validated-workflow evidence, or any request that implies runtime or Stable acceptance.
+
+Example:
+
+```json
+{
+  "platform": "glaze-ui",
+  "repository": "GoreeCloud/glaze-ui",
+  "revision": "0123456789abcdef0123456789abcdef01234567",
+  "manifest_path": "contracts/mesh.integration.json",
+  "manifest_sha256": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+  "state": "validated",
+  "validation_workflow": "Glaze UI CI",
+  "validation_run_id": 123456789,
+  "observed_at": "2026-08-24T23:45:00Z",
+  "runtime_acceptance_implied": false,
+  "stable_acceptance_implied": false
+}
+```
 
 ## Runtime platform contracts
 
@@ -219,7 +259,7 @@ Supported states are `pending`, `validated`, and `blocked`. Unknown platform sys
 
 Returns the current fail-closed source-level Stable eligibility calculation together with the mandatory-system list and recorded evidence.
 
-`stable_eligible` is `true` only when validated evidence exists for all four mandatory systems. This endpoint does not itself authorize a release, production deployment, production acceptance, or Stable promotion. Those remain separate governed transitions requiring their applicable evidence and approvals.
+`stable_eligible` is `true` only when validated runtime evidence exists for all four mandatory systems. This endpoint does not itself authorize a release, production deployment, production acceptance, or Stable promotion. Those remain separate governed transitions requiring their applicable evidence and approvals.
 
 ## Compatibility
 
