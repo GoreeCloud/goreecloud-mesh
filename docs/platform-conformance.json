@@ -8,14 +8,16 @@
   "source_contract_catalog": {
     "state": "validated",
     "api": "GET /v1/platforms",
-    "scope": "authority metadata and expected contract-source discovery only; runtime conformance remains independently evidence-gated"
+    "status_api": "GET /v1/platforms/status",
+    "scope": "authority metadata, expected contract-source discovery, and fail-closed source status inspection only; runtime conformance remains independently evidence-gated"
   },
   "systems": {
     "glaze_ui": {
       "required": true,
       "state": "pending",
       "evidence": [
-        "Mesh now catalogs Glaze UI as the authority for design, interaction, accessibility, adaptive behavior, and visual presentation and points consumers to the Glaze UI conformance contract.",
+        "Mesh catalogs Glaze UI as the authority for design, interaction, accessibility, adaptive behavior, and visual presentation and points consumers to the Glaze UI conformance contract.",
+        "The platform-status view exposes missing Glaze UI runtime evidence as pending and not Stable-gate-satisfied rather than omitting or promoting it.",
         "Mesh Console is documented as a required current-Stable Glaze UI consumer but is not yet implemented or runtime-accepted."
       ]
     },
@@ -23,7 +25,8 @@
       "required": true,
       "state": "pending",
       "evidence": [
-        "Mesh now catalogs Wardveil Security as the authority for security/protection status, evidence semantics, and protection presentation and records the canonical Wardveil status schema as the expected contract source.",
+        "Mesh catalogs Wardveil Security as the authority for security/protection status, evidence semantics, and protection presentation and records the canonical Wardveil status schema as the expected contract source.",
+        "The platform-status view joins Wardveil authority metadata only with bounded recorded evidence and fails closed when that evidence is missing or non-validated.",
         "The source foundation defaults to loopback-only HTTP, fail-closed relationship policy, bounded JSON input, restrictive state-file permissions, explicit authority boundaries, and a source-level trust abstraction; approved Wardveil runtime adapter evidence remains pending."
       ]
     },
@@ -31,7 +34,8 @@
       "required": true,
       "state": "pending",
       "evidence": [
-        "Mesh now catalogs GoreeCloud Privacy Shield as the privacy authority and records the platform privacy contract as the expected source for adapter/conformance integration.",
+        "Mesh catalogs GoreeCloud Privacy Shield as the privacy authority and records the platform privacy contract as the expected source for adapter/conformance integration.",
+        "The platform-status view preserves Privacy Shield evidence as a separate privacy-authority record and cannot infer privacy acceptance from adjacent Mesh or Wardveil state.",
         "The architecture limits Mesh to coordination metadata, prohibits unnecessary application payload centralization, and includes source-level privacy/retention governance; approved Privacy Shield runtime adapter and retention evidence remain pending."
       ]
     },
@@ -39,7 +43,8 @@
       "required": true,
       "state": "pending",
       "evidence": [
-        "Mesh now catalogs Everkeep as the authority for resilience, recovery, preservation, portability, succession, and digital-legacy evidence and records the continuity status schema as the expected contract source.",
+        "Mesh catalogs Everkeep as the authority for resilience, recovery, preservation, portability, succession, and digital-legacy evidence and records the continuity status schema as the expected contract source.",
+        "The platform-status view keeps Everkeep source status fail-closed and does not treat durable state persistence as recovery acceptance.",
         "The initial store uses atomic durable JSON persistence and source-level recovery readiness requires export, backup, restore, and verification evidence; production backup/export/restore and recovery acceptance remain pending."
       ]
     }
