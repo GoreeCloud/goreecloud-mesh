@@ -9,20 +9,25 @@ import (
 	"strings"
 	"time"
 
+	"github.com/GoreeCloud/goreecloud-mesh/internal/contracts"
 	"github.com/GoreeCloud/goreecloud-mesh/internal/mesh"
 	"github.com/GoreeCloud/goreecloud-mesh/internal/model"
 )
 
 type Server struct {
-	mesh   *mesh.Mesh
-	logger *slog.Logger
+	mesh      *mesh.Mesh
+	contracts *contracts.Registry
+	logger    *slog.Logger
 }
 
-func New(m *mesh.Mesh, logger *slog.Logger) http.Handler {
+func New(m *mesh.Mesh, registry *contracts.Registry, logger *slog.Logger) http.Handler {
 	if logger == nil {
 		logger = slog.Default()
 	}
-	s := &Server{mesh: m, logger: logger}
+	if registry == nil {
+		registry = contracts.NewRegistry()
+	}
+	s := &Server{mesh: m, contracts: registry, logger: logger}
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /healthz", s.health)
 	mux.HandleFunc("GET /v1/state", s.state)
@@ -33,6 +38,9 @@ func New(m *mesh.Mesh, logger *slog.Logger) http.Handler {
 	mux.HandleFunc("POST /v1/relationships", s.relationships)
 	mux.HandleFunc("GET /v1/graph/impact", s.impact)
 	mux.HandleFunc("POST /v1/evaluate", s.evaluate)
+	mux.HandleFunc("GET /v1/contracts", s.contractsList)
+	mux.HandleFunc("POST /v1/contracts", s.contractsRecord)
+	mux.HandleFunc("GET /v1/contracts/stable-eligibility", s.contractsStableEligibility)
 	return requestLog(logger, mux)
 }
 
@@ -110,6 +118,35 @@ func (s *Server) evaluate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusOK, s.mesh.Evaluate(req))
+}
+
+func (s *Server) contractsList(w http.ResponseWriter, _ *http.Request) {
+	writeJSON(w, http.StatusOK, map[string]any{
+		"mandatory": contracts.Mandatory(),
+		"evidence":  s.contracts.List(),
+	})
+}
+
+func (s *Server) contractsRecord(w http.ResponseWriter, r *http.Request) {
+	var evidence contracts.Evidence
+	if err := decodeJSON(r, &evidence); err != nil {
+		writeError(w, http.StatusBadRequest, err)
+		return
+	}
+	recorded, err := s.contracts.Record(evidence)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, err)
+		return
+	}
+	writeJSON(w, http.StatusCreated, recorded)
+}
+
+func (s *Server) contractsStableEligibility(w http.ResponseWriter, _ *http.Request) {
+	writeJSON(w, http.StatusOK, map[string]any{
+		"stable_eligible": s.contracts.StableEligible(),
+		"mandatory":       contracts.Mandatory(),
+		"evidence":        s.contracts.List(),
+	})
 }
 
 func decodeJSON(r *http.Request, dst any) error {
