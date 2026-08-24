@@ -16,7 +16,7 @@ func TestCatalogCoversMandatoryPlatforms(t *testing.T) {
 		if seen[entry.Platform] {
 			t.Fatalf("catalog contains duplicate platform %q", entry.Platform)
 		}
-		if entry.DisplayName == "" || entry.Repository == "" || entry.Authority == "" || entry.ContractSource == "" {
+		if entry.DisplayName == "" || entry.Repository == "" || entry.Authority == "" || entry.ContractSource == "" || entry.IntegrationManifest == "" {
 			t.Fatalf("catalog entry for %q is incomplete: %+v", entry.Platform, entry)
 		}
 		if !entry.Required {
