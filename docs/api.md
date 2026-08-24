@@ -165,6 +165,39 @@ The initial evaluator fails closed when:
 
 Mesh Policy is one authorization input, not a substitute for application authorization, GoreeCloud Identity, Gateway controls, Network controls, or Wardveil Security.
 
+## Runtime platform contracts
+
+### `GET /v1/contracts`
+
+Returns the four mandatory integral platform systems and the currently recorded runtime evidence entries.
+
+The mandatory systems are Glaze UI, Wardveil Security, Privacy Shield, and Everkeep.
+
+### `POST /v1/contracts`
+
+Records or replaces one bounded runtime evidence entry.
+
+Example:
+
+```json
+{
+  "platform": "wardveil-security",
+  "contract": "wardveil-runtime-v1",
+  "state": "validated",
+  "source": "wardveil-adapter",
+  "revision": "example-revision",
+  "detail": "runtime security contract accepted"
+}
+```
+
+Supported states are `pending`, `validated`, and `blocked`. Unknown platform systems, missing contract identifiers, and invalid states are rejected. Evidence must not contain reusable credentials, private keys, tokens, recovery secrets, or private application content.
+
+### `GET /v1/contracts/stable-eligibility`
+
+Returns the current fail-closed source-level Stable eligibility calculation together with the mandatory-system list and recorded evidence.
+
+`stable_eligible` is `true` only when validated evidence exists for all four mandatory systems. This endpoint does not itself authorize a release, production deployment, production acceptance, or Stable promotion. Those remain separate governed transitions requiring their applicable evidence and approvals.
+
 ## Compatibility
 
 The `/v1/` namespace is the first public contract boundary inside the repository. Breaking changes must move through a controlled version transition instead of silently changing consumer behavior.

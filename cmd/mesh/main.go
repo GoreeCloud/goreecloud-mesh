@@ -11,6 +11,7 @@ import (
 	"time"
 
 	meshapi "github.com/GoreeCloud/goreecloud-mesh/internal/api"
+	"github.com/GoreeCloud/goreecloud-mesh/internal/contracts"
 	"github.com/GoreeCloud/goreecloud-mesh/internal/mesh"
 	"github.com/GoreeCloud/goreecloud-mesh/internal/store"
 )
@@ -27,7 +28,8 @@ func main() {
 		os.Exit(1)
 	}
 
-	handler := meshapi.New(mesh.New(state), logger)
+	contractRegistry := contracts.NewRegistry()
+	handler := meshapi.New(mesh.New(state), contractRegistry, logger)
 	server := &http.Server{
 		Addr:              *listen,
 		Handler:           handler,
