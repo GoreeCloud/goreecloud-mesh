@@ -87,10 +87,10 @@ func (e RecoveryEvidence) Validate() error {
 
 func RecoveryReady(evidence []RecoveryEvidence) bool {
 	required := map[RecoveryCapability]bool{
-		RecoveryExport: false,
-		RecoveryBackup: false,
+		RecoveryExport:  false,
+		RecoveryBackup:  false,
 		RecoveryRestore: false,
-		RecoveryVerify: false,
+		RecoveryVerify:  false,
 	}
 	for _, item := range evidence {
 		if item.Validate() != nil || item.State != "validated" {
