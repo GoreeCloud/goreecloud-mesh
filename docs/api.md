@@ -165,6 +165,21 @@ The initial evaluator fails closed when:
 
 Mesh Policy is one authorization input, not a substitute for application authorization, GoreeCloud Identity, Gateway controls, Network controls, or Wardveil Security.
 
+## Integral platform catalog
+
+### `GET /v1/platforms`
+
+Returns the canonical Mesh-side catalog of mandatory integral platform systems. Each entry records the system identifier, display name, repository, authority boundary, expected contract source, and whether the system is required.
+
+The catalog currently identifies:
+
+- Glaze UI as the authority for design, interaction, accessibility, adaptive behavior, and visual presentation;
+- Wardveil Security as the authority for security/protection status and evidence semantics;
+- GoreeCloud Privacy Shield as the authority for privacy controls, privacy status, data minimization, retention expectations, and privacy-capability governance; and
+- Everkeep as the authority for resilience, recovery, preservation, portability, succession, and digital-legacy evidence.
+
+The endpoint is descriptive and coordination-oriented. Mesh does not acquire the technical authority of a listed system merely because it catalogs or consumes that system's contract.
+
 ## Runtime platform contracts
 
 ### `GET /v1/contracts`
