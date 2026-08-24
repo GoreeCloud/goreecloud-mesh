@@ -15,9 +15,10 @@ import (
 )
 
 type Server struct {
-	mesh      *mesh.Mesh
-	contracts *contracts.Registry
-	logger    *slog.Logger
+	mesh         *mesh.Mesh
+	contracts    *contracts.Registry
+	attestations *contracts.SourceAttestationRegistry
+	logger       *slog.Logger
 }
 
 func New(m *mesh.Mesh, registry *contracts.Registry, logger *slog.Logger) http.Handler {
@@ -27,7 +28,12 @@ func New(m *mesh.Mesh, registry *contracts.Registry, logger *slog.Logger) http.H
 	if registry == nil {
 		registry = contracts.NewRegistry()
 	}
-	s := &Server{mesh: m, contracts: registry, logger: logger}
+	s := &Server{
+		mesh:         m,
+		contracts:    registry,
+		attestations: contracts.NewSourceAttestationRegistry(),
+		logger:       logger,
+	}
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /healthz", s.health)
 	mux.HandleFunc("GET /v1/state", s.state)
@@ -40,6 +46,8 @@ func New(m *mesh.Mesh, registry *contracts.Registry, logger *slog.Logger) http.H
 	mux.HandleFunc("POST /v1/evaluate", s.evaluate)
 	mux.HandleFunc("GET /v1/platforms", s.platforms)
 	mux.HandleFunc("GET /v1/platforms/status", s.platformStatuses)
+	mux.HandleFunc("GET /v1/platforms/source-attestations", s.sourceAttestationsList)
+	mux.HandleFunc("POST /v1/platforms/source-attestations", s.sourceAttestationsRecord)
 	mux.HandleFunc("GET /v1/contracts", s.contractsList)
 	mux.HandleFunc("POST /v1/contracts", s.contractsRecord)
 	mux.HandleFunc("GET /v1/contracts/stable-eligibility", s.contractsStableEligibility)
@@ -131,10 +139,33 @@ func (s *Server) platforms(w http.ResponseWriter, _ *http.Request) {
 
 func (s *Server) platformStatuses(w http.ResponseWriter, _ *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]any{
-		"stable_eligible": s.contracts.StableEligible(),
-		"systems":         s.contracts.IntegrationStatuses(),
-		"note":            "Missing or non-validated evidence fails closed; source status does not authorize production or Stable promotion.",
+		"stable_eligible":               s.contracts.StableEligible(),
+		"source_attestations_validated": s.attestations.AllValidated(),
+		"systems":                       s.contracts.IntegrationStatuses(),
+		"note":                          "Source provenance and runtime evidence are independent gates; source attestation does not authorize production or Stable promotion.",
 	})
+}
+
+func (s *Server) sourceAttestationsList(w http.ResponseWriter, _ *http.Request) {
+	writeJSON(w, http.StatusOK, map[string]any{
+		"all_validated": s.attestations.AllValidated(),
+		"attestations":  s.attestations.List(),
+		"note":          "Source attestations prove reviewed producer revisions and manifest bytes only; they do not imply runtime or Stable acceptance.",
+	})
+}
+
+func (s *Server) sourceAttestationsRecord(w http.ResponseWriter, r *http.Request) {
+	var attestation contracts.SourceAttestation
+	if err := decodeJSON(r, &attestation); err != nil {
+		writeError(w, http.StatusBadRequest, err)
+		return
+	}
+	recorded, err := s.attestations.Record(attestation)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, err)
+		return
+	}
+	writeJSON(w, http.StatusCreated, recorded)
 }
 
 func (s *Server) contractsList(w http.ResponseWriter, _ *http.Request) {
