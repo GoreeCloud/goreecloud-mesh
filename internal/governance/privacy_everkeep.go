@@ -59,7 +59,7 @@ func (r PrivacyRecord) Validate() error {
 type RecoveryDimension string
 
 const (
-	RecoveryBackupCoverage   RecoveryDimension = "backup_coverage"
+	RecoveryBackupCoverage    RecoveryDimension = "backup_coverage"
 	RecoveryRestoreCapability RecoveryDimension = "restore_capability"
 	RecoveryPortability       RecoveryDimension = "portability"
 	RecoveryDocumentation     RecoveryDimension = "documentation"
