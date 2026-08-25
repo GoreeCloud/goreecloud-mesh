@@ -20,6 +20,7 @@ func main() {
 	listen := flag.String("listen", "127.0.0.1:8787", "HTTP listen address")
 	statePath := flag.String("state", "./mesh-state.json", "durable Mesh state path; empty disables persistence")
 	attestationPath := flag.String("source-attestations", "./mesh-source-attestations.json", "durable source-attestation state path; empty disables persistence")
+	runtimeEvidencePath := flag.String("runtime-evidence", "./mesh-runtime-evidence.json", "durable runtime contract evidence path; empty disables persistence")
 	flag.Parse()
 
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo}))
@@ -35,7 +36,12 @@ func main() {
 		os.Exit(1)
 	}
 
-	contractRegistry := contracts.NewRegistry()
+	contractRegistry, err := contracts.NewPersistentRegistry(*runtimeEvidencePath)
+	if err != nil {
+		logger.Error("load runtime evidence", "error", err)
+		os.Exit(1)
+	}
+
 	handler := meshapi.NewWithAttestations(mesh.New(state), contractRegistry, attestationRegistry, logger)
 	server := &http.Server{
 		Addr:              *listen,
@@ -48,7 +54,7 @@ func main() {
 
 	errCh := make(chan error, 1)
 	go func() {
-		logger.Info("mesh starting", "listen", *listen, "state", *statePath, "source_attestations", *attestationPath)
+		logger.Info("mesh starting", "listen", *listen, "state", *statePath, "source_attestations", *attestationPath, "runtime_evidence", *runtimeEvidencePath)
 		errCh <- server.ListenAndServe()
 	}()
 

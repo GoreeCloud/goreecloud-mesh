@@ -17,7 +17,8 @@ The initial native foundation provides:
 - **Mesh Platform Catalog** — machine-readable authority and contract-source metadata for Glaze UI, Wardveil Security, Privacy Shield, and Everkeep without transferring those systems' authority into Mesh.
 - **Mesh Platform Status** — read-only joined authority/evidence status that makes missing and non-validated platform evidence explicit and fail-closed.
 - **Mesh Source Attestations** — durable exact-source provenance for reviewed platform integration manifests, kept independent from runtime and Stable acceptance.
-- **Mesh API** — private-first HTTP interface for discovery, registration, graph inspection, platform catalog/status inspection, source-provenance inspection, and policy evaluation.
+- **Mesh Runtime Evidence** — durable bounded runtime contract evidence for mandatory integral platform systems, kept separate from source provenance and still subject to fail-closed Stable eligibility rules.
+- **Mesh API** — private-first HTTP interface for discovery, registration, graph inspection, platform catalog/status inspection, source-provenance inspection, runtime-evidence inspection, and policy evaluation.
 - **Mesh Console** — planned Glaze UI administrative experience; not yet represented as complete.
 
 ## Architecture principles
@@ -30,6 +31,7 @@ The initial native foundation provides:
 - Privacy-conscious metadata: Mesh records only coordination information necessary to operate relationships.
 - Durable, atomic local state with no external database dependency in the first milestone.
 - Source provenance remains separate from runtime evidence and cannot satisfy Stable gates by itself.
+- Runtime evidence persistence does not create or infer runtime acceptance; evidence states remain explicit and fail closed.
 - Mandatory Glaze UI, Wardveil Security, Privacy Shield, and Everkeep contracts are tracked as release gates; this foundation does **not** claim Stable conformance yet.
 
 ## Run
@@ -38,10 +40,11 @@ The initial native foundation provides:
 go run ./cmd/mesh \
   -listen 127.0.0.1:8787 \
   -state ./mesh-state.json \
-  -source-attestations ./mesh-source-attestations.json
+  -source-attestations ./mesh-source-attestations.json \
+  -runtime-evidence ./mesh-runtime-evidence.json
 ```
 
-The default listen address is loopback-only. Source attestations are persisted atomically to a separate restrictive-permission JSON state file by default. Passing an empty `-source-attestations` value disables attestation persistence for test or ephemeral operation. Public exposure is not part of this milestone.
+The default listen address is loopback-only. Source attestations and runtime contract evidence are persisted atomically to separate restrictive-permission JSON state files by default. Passing an empty value for either persistence flag disables that store for test or ephemeral operation. Public exposure is not part of this milestone.
 
 ## API
 
