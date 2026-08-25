@@ -33,6 +33,7 @@ const (
 // Evidence records runtime-verifiable proof without embedding secrets or private user data.
 type Evidence struct {
 	Platform   Platform  `json:"platform"`
+	Repository string    `json:"repository,omitempty"`
 	Contract   string    `json:"contract"`
 	State      State     `json:"state"`
 	Source     string    `json:"source,omitempty"`
@@ -54,6 +55,7 @@ func normalizeEvidence(v Evidence) (Evidence, error) {
 }
 
 func normalizeEvidenceAt(v Evidence, evaluatedAt time.Time) (Evidence, error) {
+	v.Repository = strings.TrimSpace(v.Repository)
 	v.Contract = strings.TrimSpace(v.Contract)
 	v.Source = strings.TrimSpace(v.Source)
 	v.Revision = strings.TrimSpace(v.Revision)
@@ -63,6 +65,9 @@ func normalizeEvidenceAt(v Evidence, evaluatedAt time.Time) (Evidence, error) {
 	entry, ok := CatalogFor(v.Platform)
 	if !ok || !entry.Required {
 		return Evidence{}, errors.New("platform is not a mandatory Mesh platform contract")
+	}
+	if v.Repository != "" && v.Repository != entry.Repository {
+		return Evidence{}, errors.New("repository does not match the canonical Mesh platform catalog")
 	}
 	if v.Contract == "" {
 		return Evidence{}, errors.New("contract is required")
@@ -74,6 +79,9 @@ func normalizeEvidenceAt(v Evidence, evaluatedAt time.Time) (Evidence, error) {
 		return Evidence{}, errors.New("invalid contract state")
 	}
 	if v.State == Validated {
+		if v.Repository == "" {
+			return Evidence{}, errors.New("validated runtime evidence requires the canonical producer repository")
+		}
 		if v.Source == "" {
 			return Evidence{}, errors.New("validated runtime evidence requires a source")
 		}
