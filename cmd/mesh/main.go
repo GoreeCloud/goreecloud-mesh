@@ -19,6 +19,7 @@ import (
 func main() {
 	listen := flag.String("listen", "127.0.0.1:8787", "HTTP listen address")
 	statePath := flag.String("state", "./mesh-state.json", "durable Mesh state path; empty disables persistence")
+	attestationPath := flag.String("source-attestations", "./mesh-source-attestations.json", "durable source-attestation state path; empty disables persistence")
 	flag.Parse()
 
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo}))
@@ -28,8 +29,14 @@ func main() {
 		os.Exit(1)
 	}
 
+	attestationRegistry, err := contracts.NewPersistentSourceAttestationRegistry(*attestationPath)
+	if err != nil {
+		logger.Error("load source attestations", "error", err)
+		os.Exit(1)
+	}
+
 	contractRegistry := contracts.NewRegistry()
-	handler := meshapi.New(mesh.New(state), contractRegistry, logger)
+	handler := meshapi.NewWithAttestations(mesh.New(state), contractRegistry, attestationRegistry, logger)
 	server := &http.Server{
 		Addr:              *listen,
 		Handler:           handler,
@@ -41,7 +48,7 @@ func main() {
 
 	errCh := make(chan error, 1)
 	go func() {
-		logger.Info("mesh starting", "listen", *listen, "state", *statePath)
+		logger.Info("mesh starting", "listen", *listen, "state", *statePath, "source_attestations", *attestationPath)
 		errCh <- server.ListenAndServe()
 	}()
 
