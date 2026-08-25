@@ -20,6 +20,7 @@ func TestPersistentRuntimeEvidenceSurvivesReload(t *testing.T) {
 	}
 	want := Evidence{
 		Platform:   Wardveil,
+		Repository: entry.Repository,
 		Contract:   entry.ContractSource,
 		State:      Validated,
 		Source:     "wardveil-adapter",
@@ -58,7 +59,7 @@ func TestPersistentRuntimeEvidenceRejectsInvalidStoredState(t *testing.T) {
 	if !ok {
 		t.Fatal("Wardveil catalog entry missing")
 	}
-	data := `[{"platform":"wardveil-security","contract":"` + entry.ContractSource + `","state":"accepted","observed_at":"2026-08-24T23:00:00Z"}]`
+	data := `[{"platform":"wardveil-security","repository":"` + entry.Repository + `","contract":"` + entry.ContractSource + `","state":"accepted","observed_at":"2026-08-24T23:00:00Z"}]`
 	if err := os.WriteFile(path, []byte(data), 0o600); err != nil {
 		t.Fatalf("write invalid persisted evidence: %v", err)
 	}
@@ -74,8 +75,8 @@ func TestPersistentRuntimeEvidenceRejectsDuplicatePlatform(t *testing.T) {
 		t.Fatal("Everkeep catalog entry missing")
 	}
 	data := `[
-		{"platform":"everkeep","contract":"` + entry.ContractSource + `","state":"pending","observed_at":"2026-08-24T23:00:00Z"},
-		{"platform":"everkeep","contract":"` + entry.ContractSource + `","state":"blocked","observed_at":"2026-08-24T23:01:00Z"}
+		{"platform":"everkeep","repository":"` + entry.Repository + `","contract":"` + entry.ContractSource + `","state":"pending","observed_at":"2026-08-24T23:00:00Z"},
+		{"platform":"everkeep","repository":"` + entry.Repository + `","contract":"` + entry.ContractSource + `","state":"blocked","observed_at":"2026-08-24T23:01:00Z"}
 	]`
 	if err := os.WriteFile(path, []byte(data), 0o600); err != nil {
 		t.Fatalf("write duplicate persisted evidence: %v", err)
@@ -87,11 +88,26 @@ func TestPersistentRuntimeEvidenceRejectsDuplicatePlatform(t *testing.T) {
 
 func TestPersistentRuntimeEvidenceRejectsNonCanonicalContract(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "runtime-evidence.json")
-	data := `[{"platform":"privacy-shield","contract":"privacy-runtime-v1","state":"pending","observed_at":"2026-08-24T23:00:00Z"}]`
+	data := `[{"platform":"privacy-shield","repository":"GoreeCloud/goreecloud-privacy-shield","contract":"privacy-runtime-v1","state":"pending","observed_at":"2026-08-24T23:00:00Z"}]`
 	if err := os.WriteFile(path, []byte(data), 0o600); err != nil {
 		t.Fatalf("write invalid persisted evidence: %v", err)
 	}
 	if _, err := NewPersistentRegistry(path); err == nil {
 		t.Fatal("expected non-canonical persisted runtime evidence to fail closed")
+	}
+}
+
+func TestPersistentRuntimeEvidenceRejectsMismatchedRepository(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "runtime-evidence.json")
+	entry, ok := CatalogFor(Wardveil)
+	if !ok {
+		t.Fatal("Wardveil catalog entry missing")
+	}
+	data := `[{"platform":"wardveil-security","repository":"GoreeCloud/goreecloud-everkeep","contract":"` + entry.ContractSource + `","state":"pending","observed_at":"2026-08-24T23:00:00Z"}]`
+	if err := os.WriteFile(path, []byte(data), 0o600); err != nil {
+		t.Fatalf("write mismatched persisted evidence: %v", err)
+	}
+	if _, err := NewPersistentRegistry(path); err == nil {
+		t.Fatal("expected mismatched persisted runtime evidence repository to fail closed")
 	}
 }

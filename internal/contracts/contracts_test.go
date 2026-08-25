@@ -14,11 +14,12 @@ func canonicalEvidence(t *testing.T, platform Platform, state State) Evidence {
 		t.Fatalf("catalog entry missing for %s", platform)
 	}
 	return Evidence{
-		Platform: platform,
-		Contract: entry.ContractSource,
-		State:    state,
-		Source:   "test-adapter",
-		Revision: testRevision,
+		Platform:   platform,
+		Repository: entry.Repository,
+		Contract:   entry.ContractSource,
+		State:      state,
+		Source:     "test-adapter",
+		Revision:   testRevision,
 	}
 }
 
@@ -66,6 +67,21 @@ func TestRuntimeEvidenceRejectsNonCanonicalContract(t *testing.T) {
 	evidence.Contract = "wardveil-runtime-v1"
 	if _, err := r.Record(evidence); err == nil {
 		t.Fatal("expected non-canonical contract to be rejected")
+	}
+}
+
+func TestValidatedRuntimeEvidenceRequiresCanonicalRepository(t *testing.T) {
+	r := NewRegistry()
+	evidence := canonicalEvidence(t, Wardveil, Validated)
+	evidence.Repository = ""
+	if _, err := r.Record(evidence); err == nil {
+		t.Fatal("expected validated evidence without repository to be rejected")
+	}
+
+	evidence = canonicalEvidence(t, Wardveil, Validated)
+	evidence.Repository = "GoreeCloud/goreecloud-privacy-shield"
+	if _, err := r.Record(evidence); err == nil {
+		t.Fatal("expected mismatched producer repository to be rejected")
 	}
 }
 

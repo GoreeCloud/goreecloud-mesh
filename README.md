@@ -17,7 +17,7 @@ The initial native foundation provides:
 - **Mesh Platform Catalog** — machine-readable authority and contract-source metadata for Glaze UI, Wardveil Security, Privacy Shield, and Everkeep without transferring those systems' authority into Mesh.
 - **Mesh Platform Status** — read-only joined authority/evidence status that makes missing and non-validated platform evidence explicit and fail-closed.
 - **Mesh Source Attestations** — durable exact-source provenance for reviewed platform integration manifests, kept independent from runtime and Stable acceptance.
-- **Mesh Runtime Evidence** — durable bounded runtime contract evidence for mandatory integral platform systems, kept separate from source provenance and still subject to fail-closed Stable eligibility rules.
+- **Mesh Runtime Evidence** — durable bounded runtime contract evidence for mandatory integral platform systems, bound to each platform's canonical producer repository, canonical contract source, exact Git revision, and observation time while remaining separate from source provenance and Stable acceptance.
 - **Mesh API** — private-first HTTP interface for discovery, registration, graph inspection, platform catalog/status inspection, source-provenance inspection, runtime-evidence inspection, and policy evaluation.
 - **Mesh Console** — planned Glaze UI administrative experience; not yet represented as complete.
 
@@ -31,7 +31,7 @@ The initial native foundation provides:
 - Privacy-conscious metadata: Mesh records only coordination information necessary to operate relationships.
 - Durable, atomic local state with no external database dependency in the first milestone.
 - Source provenance remains separate from runtime evidence and cannot satisfy Stable gates by itself.
-- Runtime evidence persistence does not create or infer runtime acceptance; evidence states remain explicit and fail closed.
+- Runtime evidence persistence does not create or infer runtime acceptance; validated evidence must bind to the canonical producer repository, canonical contract source, exact Git revision, and non-future observation time.
 - Mandatory Glaze UI, Wardveil Security, Privacy Shield, and Everkeep contracts are tracked as release gates; this foundation does **not** claim Stable conformance yet.
 
 ## Run

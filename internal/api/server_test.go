@@ -103,11 +103,12 @@ func TestContractStableEligibilityAPI(t *testing.T) {
 			t.Fatalf("catalog entry missing for %s", platform)
 		}
 		body, err := json.Marshal(contracts.Evidence{
-			Platform: platform,
-			Contract: entry.ContractSource,
-			State:    contracts.Validated,
-			Source:   "test-adapter",
-			Revision: testRuntimeRevision,
+			Platform:   platform,
+			Repository: entry.Repository,
+			Contract:   entry.ContractSource,
+			State:      contracts.Validated,
+			Source:     "test-adapter",
+			Revision:   testRuntimeRevision,
 		})
 		if err != nil {
 			t.Fatal(err)
@@ -145,7 +146,7 @@ func TestContractAPIRejectsUnknownPlatform(t *testing.T) {
 
 func TestContractAPIRejectsNonCanonicalValidatedEvidence(t *testing.T) {
 	h := testHandler(t)
-	body := []byte(`{"platform":"wardveil-security","contract":"wardveil-runtime-v1","state":"validated","source":"test-adapter","revision":"0123456789abcdef0123456789abcdef01234567"}`)
+	body := []byte(`{"platform":"wardveil-security","repository":"GoreeCloud/goreecloud-wardveil-security","contract":"wardveil-runtime-v1","state":"validated","source":"test-adapter","revision":"0123456789abcdef0123456789abcdef01234567"}`)
 	request := httptest.NewRequest(http.MethodPost, "/v1/contracts", bytes.NewReader(body))
 	response := httptest.NewRecorder()
 	h.ServeHTTP(response, request)
@@ -161,11 +162,37 @@ func TestContractAPIRejectsShortValidatedRevision(t *testing.T) {
 		t.Fatal("Wardveil catalog entry missing")
 	}
 	body, err := json.Marshal(contracts.Evidence{
-		Platform: contracts.Wardveil,
-		Contract: entry.ContractSource,
-		State:    contracts.Validated,
-		Source:   "test-adapter",
-		Revision: "abc123",
+		Platform:   contracts.Wardveil,
+		Repository: entry.Repository,
+		Contract:   entry.ContractSource,
+		State:      contracts.Validated,
+		Source:     "test-adapter",
+		Revision:   "abc123",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	request := httptest.NewRequest(http.MethodPost, "/v1/contracts", bytes.NewReader(body))
+	response := httptest.NewRecorder()
+	h.ServeHTTP(response, request)
+	if response.Code != http.StatusBadRequest {
+		t.Fatalf("status = %d body=%s", response.Code, response.Body.String())
+	}
+}
+
+func TestContractAPIRejectsMismatchedRepository(t *testing.T) {
+	h := testHandler(t)
+	entry, ok := contracts.CatalogFor(contracts.Wardveil)
+	if !ok {
+		t.Fatal("Wardveil catalog entry missing")
+	}
+	body, err := json.Marshal(contracts.Evidence{
+		Platform:   contracts.Wardveil,
+		Repository: "GoreeCloud/goreecloud-everkeep",
+		Contract:   entry.ContractSource,
+		State:      contracts.Validated,
+		Source:     "test-adapter",
+		Revision:   testRuntimeRevision,
 	})
 	if err != nil {
 		t.Fatal(err)
