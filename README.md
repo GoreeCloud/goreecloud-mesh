@@ -16,7 +16,8 @@ The initial native foundation provides:
 - **Mesh Connections** — explicit, versionable relationships between registered components.
 - **Mesh Platform Catalog** — machine-readable authority and contract-source metadata for Glaze UI, Wardveil Security, Privacy Shield, and Everkeep without transferring those systems' authority into Mesh.
 - **Mesh Platform Status** — read-only joined authority/evidence status that makes missing and non-validated platform evidence explicit and fail-closed.
-- **Mesh API** — private-first HTTP interface for discovery, registration, graph inspection, platform catalog/status inspection, and policy evaluation.
+- **Mesh Source Attestations** — durable exact-source provenance for reviewed platform integration manifests, kept independent from runtime and Stable acceptance.
+- **Mesh API** — private-first HTTP interface for discovery, registration, graph inspection, platform catalog/status inspection, source-provenance inspection, and policy evaluation.
 - **Mesh Console** — planned Glaze UI administrative experience; not yet represented as complete.
 
 ## Architecture principles
@@ -28,15 +29,19 @@ The initial native foundation provides:
 - Health-aware failure isolation and dependency-impact visibility.
 - Privacy-conscious metadata: Mesh records only coordination information necessary to operate relationships.
 - Durable, atomic local state with no external database dependency in the first milestone.
+- Source provenance remains separate from runtime evidence and cannot satisfy Stable gates by itself.
 - Mandatory Glaze UI, Wardveil Security, Privacy Shield, and Everkeep contracts are tracked as release gates; this foundation does **not** claim Stable conformance yet.
 
 ## Run
 
 ```bash
-go run ./cmd/mesh -listen 127.0.0.1:8787 -state ./mesh-state.json
+go run ./cmd/mesh \
+  -listen 127.0.0.1:8787 \
+  -state ./mesh-state.json \
+  -source-attestations ./mesh-source-attestations.json
 ```
 
-The default listen address is loopback-only. Public exposure is not part of this milestone.
+The default listen address is loopback-only. Source attestations are persisted atomically to a separate restrictive-permission JSON state file by default. Passing an empty `-source-attestations` value disables attestation persistence for test or ephemeral operation. Public exposure is not part of this milestone.
 
 ## API
 
@@ -53,6 +58,8 @@ Key initial endpoints:
 - `POST /v1/evaluate`
 - `GET /v1/platforms`
 - `GET /v1/platforms/status`
+- `GET /v1/platforms/source-attestations`
+- `POST /v1/platforms/source-attestations`
 - `GET /v1/contracts`
 - `POST /v1/contracts`
 - `GET /v1/contracts/stable-eligibility`
