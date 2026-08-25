@@ -11,9 +11,19 @@ import (
 	"github.com/GoreeCloud/goreecloud-mesh/internal/contracts"
 	"github.com/GoreeCloud/goreecloud-mesh/internal/mesh"
 	"github.com/GoreeCloud/goreecloud-mesh/internal/store"
+	"github.com/GoreeCloud/goreecloud-mesh/internal/trust"
 )
 
 const testRuntimeRevision = "0123456789abcdef0123456789abcdef01234567"
+
+type staticVerifier struct {
+	principal trust.Principal
+	err       error
+}
+
+func (v staticVerifier) Verify(*http.Request) (trust.Principal, error) {
+	return v.principal, v.err
+}
 
 func testHandler(t *testing.T) http.Handler {
 	t.Helper()
@@ -21,7 +31,19 @@ func testHandler(t *testing.T) http.Handler {
 	if err != nil {
 		t.Fatalf("store: %v", err)
 	}
-	return New(mesh.New(state), contracts.NewRegistry(), nil)
+	verifier := staticVerifier{principal: trust.Principal{
+		ServiceID: "mesh-test-client",
+		Issuer:    "goreecloud-identity",
+		Subject:   "service:mesh-test-client",
+		Scopes: []string{
+			ScopeServicesWrite,
+			ScopeRelationshipsWrite,
+			ScopePolicyEvaluate,
+			ScopeAttestationsWrite,
+			ScopeContractsWrite,
+		},
+	}}
+	return NewAuthorized(mesh.New(state), contracts.NewRegistry(), contracts.NewSourceAttestationRegistry(), verifier, nil)
 }
 
 func TestPlatformCatalogAPI(t *testing.T) {
