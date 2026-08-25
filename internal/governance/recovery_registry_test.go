@@ -9,7 +9,7 @@ import (
 
 const testRecoveryRevision = "0123456789abcdef0123456789abcdef01234567"
 
-func recoveryEvidence(dimension RecoveryDimension, now time.Time) RecoveryEvidence {
+func registryRecoveryEvidence(dimension RecoveryDimension, now time.Time) RecoveryEvidence {
 	return RecoveryEvidence{
 		Dimension:  dimension,
 		State:      "validated",
@@ -24,14 +24,14 @@ func TestRecoveryRegistryFailsClosedUntilComplete(t *testing.T) {
 	now := time.Now().UTC()
 	r := NewRecoveryRegistry()
 	for _, dimension := range RequiredRecoveryDimensions()[:4] {
-		if _, err := r.Record(recoveryEvidence(dimension, now), now); err != nil {
+		if _, err := r.Record(registryRecoveryEvidence(dimension, now), now); err != nil {
 			t.Fatalf("record evidence: %v", err)
 		}
 	}
 	if r.Ready(now) {
 		t.Fatal("incomplete recovery evidence must not be ready")
 	}
-	if _, err := r.Record(recoveryEvidence(RecoveryProvenance, now), now); err != nil {
+	if _, err := r.Record(registryRecoveryEvidence(RecoveryProvenance, now), now); err != nil {
 		t.Fatalf("record provenance: %v", err)
 	}
 	if !r.Ready(now) {
@@ -47,7 +47,7 @@ func TestPersistentRecoveryRegistrySurvivesRestartAndExpires(t *testing.T) {
 		t.Fatalf("new registry: %v", err)
 	}
 	for _, dimension := range RequiredRecoveryDimensions() {
-		if _, err := r.Record(recoveryEvidence(dimension, now), now); err != nil {
+		if _, err := r.Record(registryRecoveryEvidence(dimension, now), now); err != nil {
 			t.Fatalf("record %s: %v", dimension, err)
 		}
 	}
