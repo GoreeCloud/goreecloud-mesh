@@ -23,7 +23,8 @@ func registryRecoveryEvidence(dimension RecoveryDimension, now time.Time) Recove
 func TestRecoveryRegistryFailsClosedUntilComplete(t *testing.T) {
 	now := time.Now().UTC()
 	r := NewRecoveryRegistry()
-	for _, dimension := range RequiredRecoveryDimensions()[:4] {
+	required := RequiredRecoveryDimensions()
+	for _, dimension := range required[:len(required)-1] {
 		if _, err := r.Record(registryRecoveryEvidence(dimension, now), now); err != nil {
 			t.Fatalf("record evidence: %v", err)
 		}
@@ -31,8 +32,9 @@ func TestRecoveryRegistryFailsClosedUntilComplete(t *testing.T) {
 	if r.Ready(now) {
 		t.Fatal("incomplete recovery evidence must not be ready")
 	}
-	if _, err := r.Record(registryRecoveryEvidence(RecoveryProvenance, now), now); err != nil {
-		t.Fatalf("record provenance: %v", err)
+	missing := required[len(required)-1]
+	if _, err := r.Record(registryRecoveryEvidence(missing, now), now); err != nil {
+		t.Fatalf("record missing dimension %s: %v", missing, err)
 	}
 	if !r.Ready(now) {
 		t.Fatal("complete valid recovery evidence should be ready")
