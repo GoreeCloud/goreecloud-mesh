@@ -20,6 +20,7 @@ func canonicalEvidence(t *testing.T, platform Platform, state State) Evidence {
 		State:      state,
 		Source:     "test-adapter",
 		Revision:   testRevision,
+		ValidUntil: time.Now().UTC().Add(time.Hour),
 	}
 }
 
@@ -34,7 +35,7 @@ func TestStableEligibilityFailsClosed(t *testing.T) {
 		}
 	}
 	if !r.StableEligible() {
-		t.Fatal("all mandatory validated contracts should be Stable eligible")
+		t.Fatal("all mandatory current validated contracts should be Stable eligible")
 	}
 }
 
@@ -102,20 +103,53 @@ func TestValidatedRuntimeEvidenceRequiresSourceAndExactRevision(t *testing.T) {
 	}
 }
 
+func TestValidatedRuntimeEvidenceRequiresProducerValidity(t *testing.T) {
+	evaluatedAt := time.Date(2026, 8, 25, 1, 0, 0, 0, time.UTC)
+	evidence := canonicalEvidence(t, Wardveil, Validated)
+	evidence.ObservedAt = evaluatedAt.Add(-time.Minute)
+	evidence.ValidUntil = time.Time{}
+	if _, err := normalizeEvidenceAt(evidence, evaluatedAt); err == nil {
+		t.Fatal("expected validated evidence without valid_until to be rejected")
+	}
+
+	evidence.ValidUntil = evidence.ObservedAt
+	if _, err := normalizeEvidenceAt(evidence, evaluatedAt); err == nil {
+		t.Fatal("expected non-forward validity interval to be rejected")
+	}
+
+	evidence.ValidUntil = evaluatedAt.Add(-time.Second)
+	if _, err := normalizeEvidenceAt(evidence, evaluatedAt); err == nil {
+		t.Fatal("expected expired validated evidence to be rejected")
+	}
+}
+
+func TestStableEligibilityExpiresAtProducerBoundary(t *testing.T) {
+	evaluatedAt := time.Date(2026, 8, 25, 1, 0, 0, 0, time.UTC)
+	r := NewRegistry()
+	for _, p := range Mandatory() {
+		evidence := canonicalEvidence(t, p, Validated)
+		evidence.ObservedAt = evaluatedAt.Add(-time.Minute)
+		evidence.ValidUntil = evaluatedAt.Add(time.Minute)
+		validated, err := normalizeEvidenceAt(evidence, evaluatedAt)
+		if err != nil {
+			t.Fatal(err)
+		}
+		r.evidence[p] = validated
+	}
+	if !r.StableEligibleAt(evaluatedAt) {
+		t.Fatal("producer-current evidence should satisfy the Stable gate")
+	}
+	if r.StableEligibleAt(evaluatedAt.Add(2 * time.Minute)) {
+		t.Fatal("expired producer validity must fail the Stable gate closed")
+	}
+}
+
 func TestRuntimeEvidenceRejectsFutureObservation(t *testing.T) {
 	evaluatedAt := time.Date(2026, 8, 25, 0, 30, 0, 0, time.UTC)
 	evidence := canonicalEvidence(t, PrivacyShield, Validated)
 	evidence.ObservedAt = evaluatedAt.Add(time.Second)
+	evidence.ValidUntil = evaluatedAt.Add(time.Hour)
 	if _, err := normalizeEvidenceAt(evidence, evaluatedAt); err == nil {
 		t.Fatal("expected future-dated runtime evidence to be rejected")
-	}
-
-	evidence.ObservedAt = evaluatedAt
-	got, err := normalizeEvidenceAt(evidence, evaluatedAt)
-	if err != nil {
-		t.Fatalf("current observation rejected: %v", err)
-	}
-	if !got.ObservedAt.Equal(evaluatedAt) {
-		t.Fatalf("observed_at = %s want %s", got.ObservedAt, evaluatedAt)
 	}
 }
