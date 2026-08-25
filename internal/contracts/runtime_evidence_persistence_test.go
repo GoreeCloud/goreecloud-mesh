@@ -26,6 +26,7 @@ func TestPersistentRuntimeEvidenceSurvivesReload(t *testing.T) {
 		Source:     "wardveil-adapter",
 		Revision:   testRevision,
 		ObservedAt: time.Date(2026, 8, 24, 23, 0, 0, 0, time.UTC),
+		ValidUntil: time.Date(2099, 1, 1, 0, 0, 0, 0, time.UTC),
 		Detail:     "validated bounded runtime evidence",
 	}
 	if _, err := registry.Record(want); err != nil {
