@@ -39,10 +39,10 @@ type everkeepAcceptance struct {
 		Forbidden []string `json:"forbidden"`
 	} `json:"sensitive_evidence"`
 	Acceptance struct {
-		Integrated                    bool `json:"everkeep_integrated"`
-		Ready                         bool `json:"everkeep_ready"`
-		TargetRuntimeRequired         bool `json:"target_runtime_acceptance_required"`
-		ExactRevisionRequired         bool `json:"exact_revision_acceptance_required"`
+		Integrated            bool `json:"everkeep_integrated"`
+		Ready                 bool `json:"everkeep_ready"`
+		TargetRuntimeRequired bool `json:"target_runtime_acceptance_required"`
+		ExactRevisionRequired bool `json:"exact_revision_acceptance_required"`
 	} `json:"acceptance"`
 }
 
@@ -138,7 +138,7 @@ func TestPlatformConformanceBindsCanonicalEverkeepSchemas(t *testing.T) {
 	root := repositoryRoot(t)
 	var raw struct {
 		StableEligible bool `json:"stable_eligible"`
-		Systems map[string]struct {
+		Systems        map[string]struct {
 			State                     string `json:"state"`
 			CanonicalAdoptionSchema   string `json:"canonical_adoption_schema"`
 			CanonicalAcceptanceSchema string `json:"canonical_acceptance_schema"`
