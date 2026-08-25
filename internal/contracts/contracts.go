@@ -19,6 +19,8 @@ const (
 	Everkeep      Platform = "everkeep"
 )
 
+const RuntimeEvidenceMaxAge = 24 * time.Hour
+
 var mandatory = []Platform{GlazeUI, Wardveil, PrivacyShield, Everkeep}
 var fullGitRevisionPattern = regexp.MustCompile(`^[0-9a-f]{40}$`)
 
@@ -100,6 +102,18 @@ func normalizeEvidenceAt(v Evidence, evaluatedAt time.Time) (Evidence, error) {
 	return v, nil
 }
 
+func evidenceFreshAt(v Evidence, evaluatedAt time.Time) bool {
+	if v.State != Validated || v.ObservedAt.IsZero() {
+		return false
+	}
+	evaluatedAt = evaluatedAt.UTC()
+	observedAt := v.ObservedAt.UTC()
+	if observedAt.After(evaluatedAt) {
+		return false
+	}
+	return evaluatedAt.Sub(observedAt) <= RuntimeEvidenceMaxAge
+}
+
 func (r *Registry) Record(v Evidence) (Evidence, error) {
 	v, err := normalizeEvidence(v)
 	if err != nil {
@@ -140,11 +154,15 @@ func (r *Registry) List() []Evidence {
 	return out
 }
 
-// StableEligible is deliberately fail-closed: all four mandatory contracts must have validated evidence.
+// StableEligible is deliberately fail-closed: all four mandatory contracts must have fresh validated evidence.
 func (r *Registry) StableEligible() bool {
+	return r.stableEligibleAt(time.Now().UTC())
+}
+
+func (r *Registry) stableEligibleAt(evaluatedAt time.Time) bool {
 	for _, p := range mandatory {
 		v, ok := r.Get(p)
-		if !ok || v.State != Validated {
+		if !ok || !evidenceFreshAt(v, evaluatedAt) {
 			return false
 		}
 	}
