@@ -22,16 +22,23 @@ type Server struct {
 }
 
 func New(m *mesh.Mesh, registry *contracts.Registry, logger *slog.Logger) http.Handler {
+	return NewWithAttestations(m, registry, contracts.NewSourceAttestationRegistry(), logger)
+}
+
+func NewWithAttestations(m *mesh.Mesh, registry *contracts.Registry, attestations *contracts.SourceAttestationRegistry, logger *slog.Logger) http.Handler {
 	if logger == nil {
 		logger = slog.Default()
 	}
 	if registry == nil {
 		registry = contracts.NewRegistry()
 	}
+	if attestations == nil {
+		attestations = contracts.NewSourceAttestationRegistry()
+	}
 	s := &Server{
 		mesh:         m,
 		contracts:    registry,
-		attestations: contracts.NewSourceAttestationRegistry(),
+		attestations: attestations,
 		logger:       logger,
 	}
 	mux := http.NewServeMux()
@@ -142,7 +149,7 @@ func (s *Server) platformStatuses(w http.ResponseWriter, _ *http.Request) {
 		"stable_eligible":               s.contracts.StableEligible(),
 		"source_attestations_validated": s.attestations.AllValidated(),
 		"systems":                       s.contracts.IntegrationStatuses(),
-		"note":                          "Source provenance and runtime evidence are independent gates; source attestation does not authorize production or Stable promotion.",
+		"note":                          "Source provenance and runtime evidence are independent; neither authorizes production or Stable promotion by itself.",
 	})
 }
 
@@ -150,7 +157,7 @@ func (s *Server) sourceAttestationsList(w http.ResponseWriter, _ *http.Request) 
 	writeJSON(w, http.StatusOK, map[string]any{
 		"all_validated": s.attestations.AllValidated(),
 		"attestations":  s.attestations.List(),
-		"note":          "Source attestations prove reviewed producer revisions and manifest bytes only; they do not imply runtime or Stable acceptance.",
+		"note":          "Source attestations prove reviewed producer source only and cannot imply runtime or Stable acceptance.",
 	})
 }
 
