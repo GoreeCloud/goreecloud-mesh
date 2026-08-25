@@ -12,6 +12,8 @@ import (
 	"github.com/GoreeCloud/goreecloud-mesh/internal/store"
 )
 
+const testRuntimeRevision = "0123456789abcdef0123456789abcdef01234567"
+
 func testHandler(t *testing.T) http.Handler {
 	t.Helper()
 	state, err := store.New("")
@@ -105,7 +107,7 @@ func TestContractStableEligibilityAPI(t *testing.T) {
 			Contract: entry.ContractSource,
 			State:    contracts.Validated,
 			Source:   "test-adapter",
-			Revision: "test-revision",
+			Revision: testRuntimeRevision,
 		})
 		if err != nil {
 			t.Fatal(err)
@@ -143,7 +145,31 @@ func TestContractAPIRejectsUnknownPlatform(t *testing.T) {
 
 func TestContractAPIRejectsNonCanonicalValidatedEvidence(t *testing.T) {
 	h := testHandler(t)
-	body := []byte(`{"platform":"wardveil-security","contract":"wardveil-runtime-v1","state":"validated","source":"test-adapter","revision":"test-revision"}`)
+	body := []byte(`{"platform":"wardveil-security","contract":"wardveil-runtime-v1","state":"validated","source":"test-adapter","revision":"0123456789abcdef0123456789abcdef01234567"}`)
+	request := httptest.NewRequest(http.MethodPost, "/v1/contracts", bytes.NewReader(body))
+	response := httptest.NewRecorder()
+	h.ServeHTTP(response, request)
+	if response.Code != http.StatusBadRequest {
+		t.Fatalf("status = %d body=%s", response.Code, response.Body.String())
+	}
+}
+
+func TestContractAPIRejectsShortValidatedRevision(t *testing.T) {
+	h := testHandler(t)
+	entry, ok := contracts.CatalogFor(contracts.Wardveil)
+	if !ok {
+		t.Fatal("Wardveil catalog entry missing")
+	}
+	body, err := json.Marshal(contracts.Evidence{
+		Platform: contracts.Wardveil,
+		Contract: entry.ContractSource,
+		State:    contracts.Validated,
+		Source:   "test-adapter",
+		Revision: "abc123",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
 	request := httptest.NewRequest(http.MethodPost, "/v1/contracts", bytes.NewReader(body))
 	response := httptest.NewRecorder()
 	h.ServeHTTP(response, request)
