@@ -238,14 +238,14 @@ The mandatory systems are Glaze UI, Wardveil Security, Privacy Shield, and Everk
 
 ### `POST /v1/contracts`
 
-Records or replaces one bounded runtime evidence entry.
+Records or replaces one bounded runtime evidence entry. The `contract` value must exactly match that platform's `contract_source` from `GET /v1/platforms`; arbitrary aliases or synthetic contract identifiers are rejected. A `validated` record additionally requires non-empty `source` and `revision` fields so a validated state is tied to identifiable runtime evidence rather than an untraceable assertion.
 
 Example:
 
 ```json
 {
   "platform": "wardveil-security",
-  "contract": "wardveil-runtime-v1",
+  "contract": "contracts/wardveil.status.schema.json",
   "state": "validated",
   "source": "wardveil-adapter",
   "revision": "example-revision",
@@ -253,7 +253,7 @@ Example:
 }
 ```
 
-Supported states are `pending`, `validated`, and `blocked`. Unknown platform systems, missing contract identifiers, and invalid states are rejected. Evidence must not contain reusable credentials, private keys, tokens, recovery secrets, or private application content.
+Supported states are `pending`, `validated`, and `blocked`. Unknown platform systems, non-canonical contract identifiers, invalid states, and validated records without source/revision evidence are rejected. Evidence must not contain reusable credentials, private keys, tokens, recovery secrets, or private application content.
 
 ### `GET /v1/contracts/stable-eligibility`
 

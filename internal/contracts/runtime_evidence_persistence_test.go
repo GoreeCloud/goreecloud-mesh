@@ -14,9 +14,13 @@ func TestPersistentRuntimeEvidenceSurvivesReload(t *testing.T) {
 		t.Fatalf("new persistent registry: %v", err)
 	}
 
+	entry, ok := CatalogFor(Wardveil)
+	if !ok {
+		t.Fatal("Wardveil catalog entry missing")
+	}
 	want := Evidence{
 		Platform:   Wardveil,
-		Contract:   "wardveil-runtime-v1",
+		Contract:   entry.ContractSource,
 		State:      Validated,
 		Source:     "wardveil-adapter",
 		Revision:   "example-revision",
@@ -50,7 +54,11 @@ func TestPersistentRuntimeEvidenceSurvivesReload(t *testing.T) {
 
 func TestPersistentRuntimeEvidenceRejectsInvalidStoredState(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "runtime-evidence.json")
-	data := `[{"platform":"wardveil-security","contract":"wardveil-runtime-v1","state":"accepted","observed_at":"2026-08-24T23:00:00Z"}]`
+	entry, ok := CatalogFor(Wardveil)
+	if !ok {
+		t.Fatal("Wardveil catalog entry missing")
+	}
+	data := `[{"platform":"wardveil-security","contract":"` + entry.ContractSource + `","state":"accepted","observed_at":"2026-08-24T23:00:00Z"}]`
 	if err := os.WriteFile(path, []byte(data), 0o600); err != nil {
 		t.Fatalf("write invalid persisted evidence: %v", err)
 	}
@@ -61,14 +69,29 @@ func TestPersistentRuntimeEvidenceRejectsInvalidStoredState(t *testing.T) {
 
 func TestPersistentRuntimeEvidenceRejectsDuplicatePlatform(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "runtime-evidence.json")
+	entry, ok := CatalogFor(Everkeep)
+	if !ok {
+		t.Fatal("Everkeep catalog entry missing")
+	}
 	data := `[
-		{"platform":"everkeep","contract":"everkeep-runtime-v1","state":"pending","observed_at":"2026-08-24T23:00:00Z"},
-		{"platform":"everkeep","contract":"everkeep-runtime-v1","state":"blocked","observed_at":"2026-08-24T23:01:00Z"}
+		{"platform":"everkeep","contract":"` + entry.ContractSource + `","state":"pending","observed_at":"2026-08-24T23:00:00Z"},
+		{"platform":"everkeep","contract":"` + entry.ContractSource + `","state":"blocked","observed_at":"2026-08-24T23:01:00Z"}
 	]`
 	if err := os.WriteFile(path, []byte(data), 0o600); err != nil {
 		t.Fatalf("write duplicate persisted evidence: %v", err)
 	}
 	if _, err := NewPersistentRegistry(path); err == nil {
 		t.Fatal("expected duplicate platform runtime evidence to fail closed")
+	}
+}
+
+func TestPersistentRuntimeEvidenceRejectsNonCanonicalContract(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "runtime-evidence.json")
+	data := `[{"platform":"privacy-shield","contract":"privacy-runtime-v1","state":"pending","observed_at":"2026-08-24T23:00:00Z"}]`
+	if err := os.WriteFile(path, []byte(data), 0o600); err != nil {
+		t.Fatalf("write invalid persisted evidence: %v", err)
+	}
+	if _, err := NewPersistentRegistry(path); err == nil {
+		t.Fatal("expected non-canonical persisted runtime evidence to fail closed")
 	}
 }
