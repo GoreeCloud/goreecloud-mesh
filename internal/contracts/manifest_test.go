@@ -14,7 +14,12 @@ func validManifestFor(entry CatalogEntry) IntegrationManifest {
 		RuntimeAcceptanceImplied:    false,
 		StableAcceptanceImplied:     false,
 		SensitiveInformationAllowed: false,
-		Purpose:                     "bounded Mesh coordination",
+		EvidenceValidity: EvidenceValidity{
+			Authority:                      ProducerOrApplicablePolicy,
+			ValidUntilRequiredForValidated: true,
+			ConsumerOverrideAllowed:        false,
+		},
+		Purpose: "bounded Mesh coordination",
 	}
 }
 
@@ -67,8 +72,30 @@ func TestIntegrationManifestFailsClosedOnCatalogMismatch(t *testing.T) {
 	}
 }
 
+func TestIntegrationManifestFailsClosedOnEvidenceValidityWeakening(t *testing.T) {
+	entry, _ := CatalogFor(Wardveil)
+
+	manifest := validManifestFor(entry)
+	manifest.EvidenceValidity.Authority = "mesh"
+	if err := ValidateIntegrationManifest(entry, manifest); err == nil {
+		t.Fatal("Mesh evidence-validity authority unexpectedly accepted")
+	}
+
+	manifest = validManifestFor(entry)
+	manifest.EvidenceValidity.ValidUntilRequiredForValidated = false
+	if err := ValidateIntegrationManifest(entry, manifest); err == nil {
+		t.Fatal("optional valid_until unexpectedly accepted")
+	}
+
+	manifest = validManifestFor(entry)
+	manifest.EvidenceValidity.ConsumerOverrideAllowed = true
+	if err := ValidateIntegrationManifest(entry, manifest); err == nil {
+		t.Fatal("consumer validity override unexpectedly accepted")
+	}
+}
+
 func TestDecodeIntegrationManifestRejectsUnknownFields(t *testing.T) {
-	data := []byte(`{"schema_version":1,"platform":"glaze-ui","producer_repository":"GoreeCloud/glaze-ui","consumer_repository":"GoreeCloud/goreecloud-mesh","authoritative_contract":"CONFORMANCE.md","integration_mode":"read-only-coordination","authority_transfer":false,"runtime_acceptance_implied":false,"stable_acceptance_implied":false,"sensitive_information_allowed":false,"purpose":"bounded coordination","unexpected":true}`)
+	data := []byte(`{"schema_version":2,"platform":"glaze-ui","producer_repository":"GoreeCloud/glaze-ui","consumer_repository":"GoreeCloud/goreecloud-mesh","authoritative_contract":"CONFORMANCE.md","integration_mode":"read-only-coordination","authority_transfer":false,"runtime_acceptance_implied":false,"stable_acceptance_implied":false,"sensitive_information_allowed":false,"evidence_validity":{"authority":"producer-or-applicable-policy","valid_until_required_for_validated":true,"consumer_override_allowed":false},"purpose":"bounded coordination","unexpected":true}`)
 	if _, err := DecodeIntegrationManifest(data); err == nil {
 		t.Fatal("unknown manifest field unexpectedly accepted")
 	}
