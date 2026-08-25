@@ -1,0 +1,60 @@
+{
+  "schema_version": 1,
+  "application": "goreecloud-mesh",
+  "producer": "GoreeCloud/goreecloud-mesh",
+  "status_schema": "contracts/continuity.status.schema.json",
+  "freshness": {
+    "required_for_ready": true,
+    "rule": "Any evidence used to support an Everkeep integration or ready claim must carry an authoritative producer-defined validity boundary; missing, expired, malformed, or non-forward validity is non-ready."
+  },
+  "failure_behavior": {
+    "producer_unavailable": "unknown",
+    "malformed_evidence": "unknown",
+    "missing_required_evidence": "unknown",
+    "failed_restore_validation": "degraded",
+    "summary_rule": "Mesh summary state may never be more favorable than any required child continuity evidence."
+  },
+  "required_ready_evidence": {
+    "backup_coverage": [
+      "a backup mechanism for Mesh-owned durable state is configured",
+      "a backup execution succeeded",
+      "the resulting backup artifact exists",
+      "artifact integrity was verified"
+    ],
+    "restore_capability": [
+      "restore was tested against an isolated target",
+      "restored Mesh-owned state was verified",
+      "recovery limitations are recorded"
+    ],
+    "portability": [
+      "Mesh-owned state export completed",
+      "exported state was validated",
+      "clean-target import or equivalent reconstruction succeeded"
+    ],
+    "documentation": [
+      "current backup, restore, export, and recovery procedures are documented"
+    ],
+    "provenance": [
+      "evidence identifies its authoritative source",
+      "evidence identifies the exact source revision when revision-bound",
+      "evidence validity is supplied by the authoritative producer or applicable policy"
+    ]
+  },
+  "sensitive_evidence": {
+    "forbidden": [
+      "passwords",
+      "tokens",
+      "recovery codes",
+      "private keys",
+      "secret values",
+      "backup contents",
+      "application payload content"
+    ]
+  },
+  "acceptance": {
+    "everkeep_integrated": false,
+    "everkeep_ready": false,
+    "target_runtime_acceptance_required": true,
+    "exact_revision_acceptance_required": true
+  }
+}
