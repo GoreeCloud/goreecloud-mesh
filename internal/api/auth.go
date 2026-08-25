@@ -8,7 +8,7 @@ import (
 )
 
 const (
-	ScopeServicesWrite     = "mesh.services.write"
+	ScopeServicesWrite      = "mesh.services.write"
 	ScopeRelationshipsWrite = "mesh.relationships.write"
 	ScopePolicyEvaluate     = "mesh.policy.evaluate"
 	ScopeAttestationsWrite  = "mesh.attestations.write"
