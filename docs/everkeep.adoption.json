@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "project": "goreecloud-mesh",
+  "repository": "GoreeCloud/goreecloud-mesh",
+  "role": "producer_consumer",
+  "dimensions": [
+    "backup_coverage",
+    "restore_capability",
+    "portability",
+    "documentation",
+    "provenance"
+  ],
+  "read_only": true,
+  "fail_closed": true,
+  "status_schema": "contracts/continuity.status.schema.json",
+  "authoritative_sources": [
+    "internal/governance/privacy_everkeep.go",
+    "docs/privacy-everkeep.md",
+    "docs/platform-conformance.json"
+  ],
+  "notes": "Mesh produces bounded recovery evidence for Mesh-owned state and consumes canonical Everkeep continuity evidence for platform coordination. Everkeep remains authoritative for continuity semantics; this manifest does not create runtime or production acceptance."
+}
