@@ -23,7 +23,7 @@ func TestPersistentRuntimeEvidenceSurvivesReload(t *testing.T) {
 		Contract:   entry.ContractSource,
 		State:      Validated,
 		Source:     "wardveil-adapter",
-		Revision:   "example-revision",
+		Revision:   testRevision,
 		ObservedAt: time.Date(2026, 8, 24, 23, 0, 0, 0, time.UTC),
 		Detail:     "validated bounded runtime evidence",
 	}
