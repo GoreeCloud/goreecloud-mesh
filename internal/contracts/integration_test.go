@@ -26,10 +26,11 @@ func TestIntegrationStatusesFailClosedWithoutEvidence(t *testing.T) {
 
 func TestIntegrationStatusesReflectRecordedEvidence(t *testing.T) {
 	r := NewRegistry()
-	if _, err := r.Record(Evidence{Platform: Wardveil, Contract: "wardveil-runtime-v1", State: Validated, Source: "test", Revision: "abc123"}); err != nil {
+	if _, err := r.Record(canonicalEvidence(t, Wardveil, Validated)); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := r.Record(Evidence{Platform: PrivacyShield, Contract: "privacy-runtime-v1", State: Blocked, Source: "test"}); err != nil {
+	privacy := canonicalEvidence(t, PrivacyShield, Blocked)
+	if _, err := r.Record(privacy); err != nil {
 		t.Fatal(err)
 	}
 
@@ -42,9 +43,9 @@ func TestIntegrationStatusesReflectRecordedEvidence(t *testing.T) {
 	if !wardveil.EvidencePresent || wardveil.EvidenceState != Validated || !wardveil.StableGateSatisfied || wardveil.Evidence == nil {
 		t.Fatalf("unexpected Wardveil status: %+v", wardveil)
 	}
-	privacy := byPlatform[PrivacyShield]
-	if !privacy.EvidencePresent || privacy.EvidenceState != Blocked || privacy.StableGateSatisfied || privacy.Evidence == nil {
-		t.Fatalf("unexpected Privacy Shield status: %+v", privacy)
+	privacyStatus := byPlatform[PrivacyShield]
+	if !privacyStatus.EvidencePresent || privacyStatus.EvidenceState != Blocked || privacyStatus.StableGateSatisfied || privacyStatus.Evidence == nil {
+		t.Fatalf("unexpected Privacy Shield status: %+v", privacyStatus)
 	}
 	glaze := byPlatform[GlazeUI]
 	if glaze.EvidencePresent || glaze.EvidenceState != Pending || glaze.StableGateSatisfied {
