@@ -31,6 +31,8 @@ const (
 )
 
 // Evidence records runtime-verifiable proof without embedding secrets or private user data.
+// ValidUntil is supplied by the authoritative evidence producer or applicable policy;
+// Mesh does not invent a global freshness duration.
 type Evidence struct {
 	Platform   Platform  `json:"platform"`
 	Repository string    `json:"repository,omitempty"`
@@ -39,6 +41,7 @@ type Evidence struct {
 	Source     string    `json:"source,omitempty"`
 	Revision   string    `json:"revision,omitempty"`
 	ObservedAt time.Time `json:"observed_at"`
+	ValidUntil time.Time `json:"valid_until,omitempty"`
 	Detail     string    `json:"detail,omitempty"`
 }
 
@@ -78,6 +81,17 @@ func normalizeEvidenceAt(v Evidence, evaluatedAt time.Time) (Evidence, error) {
 	if v.State != Pending && v.State != Validated && v.State != Blocked {
 		return Evidence{}, errors.New("invalid contract state")
 	}
+	if v.ObservedAt.IsZero() {
+		v.ObservedAt = evaluatedAt
+	} else {
+		v.ObservedAt = v.ObservedAt.UTC()
+		if v.ObservedAt.After(evaluatedAt) {
+			return Evidence{}, errors.New("runtime evidence observation time cannot be after evaluation time")
+		}
+	}
+	if !v.ValidUntil.IsZero() {
+		v.ValidUntil = v.ValidUntil.UTC()
+	}
 	if v.State == Validated {
 		if v.Repository == "" {
 			return Evidence{}, errors.New("validated runtime evidence requires the canonical producer repository")
@@ -88,13 +102,14 @@ func normalizeEvidenceAt(v Evidence, evaluatedAt time.Time) (Evidence, error) {
 		if !fullGitRevisionPattern.MatchString(v.Revision) {
 			return Evidence{}, errors.New("validated runtime evidence requires an exact 40-character lowercase Git revision")
 		}
-	}
-	if v.ObservedAt.IsZero() {
-		v.ObservedAt = evaluatedAt
-	} else {
-		v.ObservedAt = v.ObservedAt.UTC()
-		if v.ObservedAt.After(evaluatedAt) {
-			return Evidence{}, errors.New("runtime evidence observation time cannot be after evaluation time")
+		if v.ValidUntil.IsZero() {
+			return Evidence{}, errors.New("validated runtime evidence requires producer-declared valid_until")
+		}
+		if !v.ValidUntil.After(v.ObservedAt) {
+			return Evidence{}, errors.New("runtime evidence valid_until must be after observed_at")
+		}
+		if evaluatedAt.After(v.ValidUntil) {
+			return Evidence{}, errors.New("validated runtime evidence is expired")
 		}
 	}
 	return v, nil
@@ -140,11 +155,23 @@ func (r *Registry) List() []Evidence {
 	return out
 }
 
-// StableEligible is deliberately fail-closed: all four mandatory contracts must have validated evidence.
+func evidenceFreshAt(v Evidence, evaluatedAt time.Time) bool {
+	if v.State != Validated || v.ValidUntil.IsZero() {
+		return false
+	}
+	return !evaluatedAt.UTC().After(v.ValidUntil.UTC())
+}
+
+// StableEligible is deliberately fail-closed: all four mandatory contracts must
+// have validated, producer-declared current evidence.
 func (r *Registry) StableEligible() bool {
+	return r.StableEligibleAt(time.Now().UTC())
+}
+
+func (r *Registry) StableEligibleAt(evaluatedAt time.Time) bool {
 	for _, p := range mandatory {
 		v, ok := r.Get(p)
-		if !ok || v.State != Validated {
+		if !ok || !evidenceFreshAt(v, evaluatedAt) {
 			return false
 		}
 	}
