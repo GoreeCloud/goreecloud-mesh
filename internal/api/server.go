@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/GoreeCloud/goreecloud-mesh/internal/contracts"
+	"github.com/GoreeCloud/goreecloud-mesh/internal/governance"
 	"github.com/GoreeCloud/goreecloud-mesh/internal/mesh"
 	"github.com/GoreeCloud/goreecloud-mesh/internal/model"
 	"github.com/GoreeCloud/goreecloud-mesh/internal/trust"
@@ -19,19 +20,24 @@ type Server struct {
 	mesh         *mesh.Mesh
 	contracts    *contracts.Registry
 	attestations *contracts.SourceAttestationRegistry
+	recovery     *governance.RecoveryRegistry
 	verifier     trust.Verifier
 	logger       *slog.Logger
 }
 
 func New(m *mesh.Mesh, registry *contracts.Registry, logger *slog.Logger) http.Handler {
-	return NewAuthorized(m, registry, contracts.NewSourceAttestationRegistry(), nil, logger)
+	return NewAuthorizedWithRecovery(m, registry, contracts.NewSourceAttestationRegistry(), governance.NewRecoveryRegistry(), nil, logger)
 }
 
 func NewWithAttestations(m *mesh.Mesh, registry *contracts.Registry, attestations *contracts.SourceAttestationRegistry, logger *slog.Logger) http.Handler {
-	return NewAuthorized(m, registry, attestations, nil, logger)
+	return NewAuthorizedWithRecovery(m, registry, attestations, governance.NewRecoveryRegistry(), nil, logger)
 }
 
 func NewAuthorized(m *mesh.Mesh, registry *contracts.Registry, attestations *contracts.SourceAttestationRegistry, verifier trust.Verifier, logger *slog.Logger) http.Handler {
+	return NewAuthorizedWithRecovery(m, registry, attestations, governance.NewRecoveryRegistry(), verifier, logger)
+}
+
+func NewAuthorizedWithRecovery(m *mesh.Mesh, registry *contracts.Registry, attestations *contracts.SourceAttestationRegistry, recovery *governance.RecoveryRegistry, verifier trust.Verifier, logger *slog.Logger) http.Handler {
 	if logger == nil {
 		logger = slog.Default()
 	}
@@ -41,13 +47,10 @@ func NewAuthorized(m *mesh.Mesh, registry *contracts.Registry, attestations *con
 	if attestations == nil {
 		attestations = contracts.NewSourceAttestationRegistry()
 	}
-	s := &Server{
-		mesh:         m,
-		contracts:    registry,
-		attestations: attestations,
-		verifier:     verifier,
-		logger:       logger,
+	if recovery == nil {
+		recovery = governance.NewRecoveryRegistry()
 	}
+	s := &Server{mesh: m, contracts: registry, attestations: attestations, recovery: recovery, verifier: verifier, logger: logger}
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /healthz", s.health)
 	mux.HandleFunc("GET /v1/state", s.state)
@@ -65,13 +68,15 @@ func NewAuthorized(m *mesh.Mesh, registry *contracts.Registry, attestations *con
 	mux.HandleFunc("GET /v1/contracts", s.contractsList)
 	mux.HandleFunc("POST /v1/contracts", requireScope(verifier, ScopeContractsWrite, s.contractsRecord))
 	mux.HandleFunc("GET /v1/contracts/stable-eligibility", s.contractsStableEligibility)
+	mux.HandleFunc("GET /v1/everkeep/recovery-evidence", s.recoveryEvidenceList)
+	mux.HandleFunc("POST /v1/everkeep/recovery-evidence", requireScope(verifier, ScopeRecoveryWrite, s.recoveryEvidenceRecord))
+	mux.HandleFunc("GET /v1/everkeep/recovery-readiness", s.recoveryReadiness)
 	return requestLog(logger, mux)
 }
 
 func (s *Server) health(w http.ResponseWriter, _ *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]any{"status": "ok", "service": "goreecloud-mesh"})
 }
-
 func (s *Server) state(w http.ResponseWriter, _ *http.Request) {
 	writeJSON(w, http.StatusOK, s.mesh.State())
 }
@@ -145,10 +150,7 @@ func (s *Server) evaluate(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) platforms(w http.ResponseWriter, _ *http.Request) {
-	writeJSON(w, http.StatusOK, map[string]any{
-		"systems": contracts.Catalog(),
-		"note":    "Mesh coordinates these systems but does not assume their authority.",
-	})
+	writeJSON(w, http.StatusOK, map[string]any{"systems": contracts.Catalog(), "note": "Mesh coordinates these systems but does not assume their authority."})
 }
 
 func (s *Server) platformStatuses(w http.ResponseWriter, _ *http.Request) {
@@ -161,11 +163,7 @@ func (s *Server) platformStatuses(w http.ResponseWriter, _ *http.Request) {
 }
 
 func (s *Server) sourceAttestationsList(w http.ResponseWriter, _ *http.Request) {
-	writeJSON(w, http.StatusOK, map[string]any{
-		"all_validated": s.attestations.AllValidated(),
-		"attestations":  s.attestations.List(),
-		"note":          "Source attestations prove reviewed producer source only and cannot imply runtime or Stable acceptance.",
-	})
+	writeJSON(w, http.StatusOK, map[string]any{"all_validated": s.attestations.AllValidated(), "attestations": s.attestations.List(), "note": "Source attestations prove reviewed producer source only and cannot imply runtime or Stable acceptance."})
 }
 
 func (s *Server) sourceAttestationsRecord(w http.ResponseWriter, r *http.Request) {
@@ -183,10 +181,7 @@ func (s *Server) sourceAttestationsRecord(w http.ResponseWriter, r *http.Request
 }
 
 func (s *Server) contractsList(w http.ResponseWriter, _ *http.Request) {
-	writeJSON(w, http.StatusOK, map[string]any{
-		"mandatory": contracts.Mandatory(),
-		"evidence":  s.contracts.List(),
-	})
+	writeJSON(w, http.StatusOK, map[string]any{"mandatory": contracts.Mandatory(), "evidence": s.contracts.List()})
 }
 
 func (s *Server) contractsRecord(w http.ResponseWriter, r *http.Request) {
@@ -204,11 +199,36 @@ func (s *Server) contractsRecord(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) contractsStableEligibility(w http.ResponseWriter, _ *http.Request) {
+	writeJSON(w, http.StatusOK, map[string]any{"stable_eligible": s.contracts.StableEligible(), "mandatory": contracts.Mandatory(), "evidence": s.contracts.List()})
+}
+
+func (s *Server) recoveryEvidenceList(w http.ResponseWriter, _ *http.Request) {
+	now := time.Now().UTC()
 	writeJSON(w, http.StatusOK, map[string]any{
-		"stable_eligible": s.contracts.StableEligible(),
-		"mandatory":       contracts.Mandatory(),
-		"evidence":        s.contracts.List(),
+		"ready":               s.recovery.Ready(now),
+		"required_dimensions": governance.RequiredRecoveryDimensions(),
+		"evidence":            s.recovery.List(),
+		"note":                "Recovery readiness is evidence inspection only and does not itself establish production Everkeep acceptance or Stable qualification.",
 	})
+}
+
+func (s *Server) recoveryEvidenceRecord(w http.ResponseWriter, r *http.Request) {
+	var evidence governance.RecoveryEvidence
+	if err := decodeJSON(r, &evidence); err != nil {
+		writeError(w, http.StatusBadRequest, err)
+		return
+	}
+	recorded, err := s.recovery.Record(evidence, time.Now().UTC())
+	if err != nil {
+		writeError(w, http.StatusBadRequest, err)
+		return
+	}
+	writeJSON(w, http.StatusCreated, recorded)
+}
+
+func (s *Server) recoveryReadiness(w http.ResponseWriter, _ *http.Request) {
+	now := time.Now().UTC()
+	writeJSON(w, http.StatusOK, map[string]any{"ready": s.recovery.Ready(now), "required_dimensions": governance.RequiredRecoveryDimensions(), "evidence": s.recovery.List()})
 }
 
 func decodeJSON(r *http.Request, dst any) error {
@@ -228,7 +248,6 @@ func writeJSON(w http.ResponseWriter, status int, v any) {
 	w.WriteHeader(status)
 	_ = json.NewEncoder(w).Encode(v)
 }
-
 func writeError(w http.ResponseWriter, status int, err error) {
 	writeJSON(w, status, map[string]string{"error": err.Error()})
 }
