@@ -42,8 +42,12 @@
     "everkeep": {
       "required": true,
       "state": "pending",
+      "canonical_adoption_schema": "GoreeCloud/goreecloud-everkeep:contracts/continuity.adoption.schema.json@v1",
+      "canonical_acceptance_schema": "GoreeCloud/goreecloud-everkeep:contracts/continuity.acceptance.schema.json@v1",
       "evidence": [
         "Mesh catalogs Everkeep as the authority for resilience, recovery, preservation, portability, succession, and digital-legacy evidence and records the continuity status schema as the expected contract source.",
+        "docs/everkeep.adoption.json declares Mesh as a fail-closed producer-consumer of bounded continuity evidence without transferring Everkeep authority.",
+        "docs/everkeep.acceptance.json binds freshness, backup, restore, portability, documentation, provenance, and sensitive-evidence requirements while keeping Everkeep integration and readiness false.",
         "The platform-status view keeps Everkeep source status fail-closed and does not treat durable state persistence as recovery acceptance.",
         "The initial store uses atomic durable JSON persistence and source-level recovery readiness requires export, backup, restore, and verification evidence; production backup/export/restore and recovery acceptance remain pending."
       ]
@@ -53,7 +57,7 @@
     "GoreeCloud Identity-backed service authentication and authorization",
     "Wardveil Security contract implementation and runtime evidence",
     "Privacy Shield contract implementation and retention/privacy evidence",
-    "Everkeep backup/export/restore contract and recovery evidence",
+    "Everkeep target backup/export/restore, freshness, exact-revision, and recovery evidence",
     "Current Stable Glaze UI Mesh Console implementation and accessibility acceptance",
     "Monitoring health adapter and health-evidence provenance",
     "Gateway and Network enforcement-state adapters",
