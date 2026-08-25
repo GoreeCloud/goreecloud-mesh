@@ -74,45 +74,78 @@ func NewAuthorizedWithRecovery(m *mesh.Mesh, registry *contracts.Registry, attes
 	return requestLog(logger, mux)
 }
 
-func (s *Server) health(w http.ResponseWriter, _ *http.Request) { writeJSON(w, http.StatusOK, map[string]any{"status": "ok", "service": "goreecloud-mesh"}) }
-func (s *Server) state(w http.ResponseWriter, _ *http.Request) { writeJSON(w, http.StatusOK, s.mesh.State()) }
+func (s *Server) health(w http.ResponseWriter, _ *http.Request) {
+	writeJSON(w, http.StatusOK, map[string]any{"status": "ok", "service": "goreecloud-mesh"})
+}
+func (s *Server) state(w http.ResponseWriter, _ *http.Request) {
+	writeJSON(w, http.StatusOK, s.mesh.State())
+}
 
 func (s *Server) services(w http.ResponseWriter, r *http.Request) {
-	if r.Method == http.MethodGet { writeJSON(w, http.StatusOK, s.mesh.Services()); return }
+	if r.Method == http.MethodGet {
+		writeJSON(w, http.StatusOK, s.mesh.Services())
+		return
+	}
 	var v model.Service
-	if err := decodeJSON(r, &v); err != nil { writeError(w, http.StatusBadRequest, err); return }
+	if err := decodeJSON(r, &v); err != nil {
+		writeError(w, http.StatusBadRequest, err)
+		return
+	}
 	created, err := s.mesh.RegisterService(v)
-	if err != nil { writeError(w, http.StatusBadRequest, err); return }
+	if err != nil {
+		writeError(w, http.StatusBadRequest, err)
+		return
+	}
 	writeJSON(w, http.StatusCreated, created)
 }
 
 func (s *Server) service(w http.ResponseWriter, r *http.Request) {
 	id := strings.TrimSpace(r.PathValue("id"))
 	v, ok := s.mesh.Service(id)
-	if !ok { writeError(w, http.StatusNotFound, errors.New("service not found")); return }
+	if !ok {
+		writeError(w, http.StatusNotFound, errors.New("service not found"))
+		return
+	}
 	writeJSON(w, http.StatusOK, v)
 }
 
-func (s *Server) capability(w http.ResponseWriter, r *http.Request) { writeJSON(w, http.StatusOK, s.mesh.Discover(r.PathValue("capability"))) }
+func (s *Server) capability(w http.ResponseWriter, r *http.Request) {
+	writeJSON(w, http.StatusOK, s.mesh.Discover(r.PathValue("capability")))
+}
 
 func (s *Server) relationships(w http.ResponseWriter, r *http.Request) {
 	var v model.Relationship
-	if err := decodeJSON(r, &v); err != nil { writeError(w, http.StatusBadRequest, err); return }
+	if err := decodeJSON(r, &v); err != nil {
+		writeError(w, http.StatusBadRequest, err)
+		return
+	}
 	created, err := s.mesh.AddRelationship(v)
-	if err != nil { writeError(w, http.StatusBadRequest, err); return }
+	if err != nil {
+		writeError(w, http.StatusBadRequest, err)
+		return
+	}
 	writeJSON(w, http.StatusCreated, created)
 }
 
 func (s *Server) impact(w http.ResponseWriter, r *http.Request) {
 	id := strings.TrimSpace(r.URL.Query().Get("id"))
-	if id == "" { writeError(w, http.StatusBadRequest, errors.New("id is required")); return }
-	if _, ok := s.mesh.Service(id); !ok { writeError(w, http.StatusNotFound, errors.New("service not found")); return }
+	if id == "" {
+		writeError(w, http.StatusBadRequest, errors.New("id is required"))
+		return
+	}
+	if _, ok := s.mesh.Service(id); !ok {
+		writeError(w, http.StatusNotFound, errors.New("service not found"))
+		return
+	}
 	writeJSON(w, http.StatusOK, map[string]any{"service": id, "affected": s.mesh.Impact(id)})
 }
 
 func (s *Server) evaluate(w http.ResponseWriter, r *http.Request) {
 	var req model.PolicyRequest
-	if err := decodeJSON(r, &req); err != nil { writeError(w, http.StatusBadRequest, err); return }
+	if err := decodeJSON(r, &req); err != nil {
+		writeError(w, http.StatusBadRequest, err)
+		return
+	}
 	writeJSON(w, http.StatusOK, s.mesh.Evaluate(req))
 }
 
@@ -122,8 +155,10 @@ func (s *Server) platforms(w http.ResponseWriter, _ *http.Request) {
 
 func (s *Server) platformStatuses(w http.ResponseWriter, _ *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]any{
-		"stable_eligible": s.contracts.StableEligible(), "source_attestations_validated": s.attestations.AllValidated(),
-		"systems": s.contracts.IntegrationStatuses(), "note": "Source provenance and runtime evidence are independent; neither authorizes production or Stable promotion by itself.",
+		"stable_eligible":               s.contracts.StableEligible(),
+		"source_attestations_validated": s.attestations.AllValidated(),
+		"systems":                       s.contracts.IntegrationStatuses(),
+		"note":                          "Source provenance and runtime evidence are independent; neither authorizes production or Stable promotion by itself.",
 	})
 }
 
@@ -133,19 +168,33 @@ func (s *Server) sourceAttestationsList(w http.ResponseWriter, _ *http.Request) 
 
 func (s *Server) sourceAttestationsRecord(w http.ResponseWriter, r *http.Request) {
 	var attestation contracts.SourceAttestation
-	if err := decodeJSON(r, &attestation); err != nil { writeError(w, http.StatusBadRequest, err); return }
+	if err := decodeJSON(r, &attestation); err != nil {
+		writeError(w, http.StatusBadRequest, err)
+		return
+	}
 	recorded, err := s.attestations.Record(attestation)
-	if err != nil { writeError(w, http.StatusBadRequest, err); return }
+	if err != nil {
+		writeError(w, http.StatusBadRequest, err)
+		return
+	}
 	writeJSON(w, http.StatusCreated, recorded)
 }
 
-func (s *Server) contractsList(w http.ResponseWriter, _ *http.Request) { writeJSON(w, http.StatusOK, map[string]any{"mandatory": contracts.Mandatory(), "evidence": s.contracts.List()}) }
+func (s *Server) contractsList(w http.ResponseWriter, _ *http.Request) {
+	writeJSON(w, http.StatusOK, map[string]any{"mandatory": contracts.Mandatory(), "evidence": s.contracts.List()})
+}
 
 func (s *Server) contractsRecord(w http.ResponseWriter, r *http.Request) {
 	var evidence contracts.Evidence
-	if err := decodeJSON(r, &evidence); err != nil { writeError(w, http.StatusBadRequest, err); return }
+	if err := decodeJSON(r, &evidence); err != nil {
+		writeError(w, http.StatusBadRequest, err)
+		return
+	}
 	recorded, err := s.contracts.Record(evidence)
-	if err != nil { writeError(w, http.StatusBadRequest, err); return }
+	if err != nil {
+		writeError(w, http.StatusBadRequest, err)
+		return
+	}
 	writeJSON(w, http.StatusCreated, recorded)
 }
 
@@ -156,16 +205,24 @@ func (s *Server) contractsStableEligibility(w http.ResponseWriter, _ *http.Reque
 func (s *Server) recoveryEvidenceList(w http.ResponseWriter, _ *http.Request) {
 	now := time.Now().UTC()
 	writeJSON(w, http.StatusOK, map[string]any{
-		"ready": s.recovery.Ready(now), "required_dimensions": governance.RequiredRecoveryDimensions(), "evidence": s.recovery.List(),
-		"note": "Recovery readiness is evidence inspection only and does not itself establish production Everkeep acceptance or Stable qualification.",
+		"ready":               s.recovery.Ready(now),
+		"required_dimensions": governance.RequiredRecoveryDimensions(),
+		"evidence":            s.recovery.List(),
+		"note":                "Recovery readiness is evidence inspection only and does not itself establish production Everkeep acceptance or Stable qualification.",
 	})
 }
 
 func (s *Server) recoveryEvidenceRecord(w http.ResponseWriter, r *http.Request) {
 	var evidence governance.RecoveryEvidence
-	if err := decodeJSON(r, &evidence); err != nil { writeError(w, http.StatusBadRequest, err); return }
+	if err := decodeJSON(r, &evidence); err != nil {
+		writeError(w, http.StatusBadRequest, err)
+		return
+	}
 	recorded, err := s.recovery.Record(evidence, time.Now().UTC())
-	if err != nil { writeError(w, http.StatusBadRequest, err); return }
+	if err != nil {
+		writeError(w, http.StatusBadRequest, err)
+		return
+	}
 	writeJSON(w, http.StatusCreated, recorded)
 }
 
@@ -176,16 +233,29 @@ func (s *Server) recoveryReadiness(w http.ResponseWriter, _ *http.Request) {
 
 func decodeJSON(r *http.Request, dst any) error {
 	defer r.Body.Close()
-	dec := json.NewDecoder(io.LimitReader(r.Body, 1<<20)); dec.DisallowUnknownFields()
-	if err := dec.Decode(dst); err != nil { return err }
+	dec := json.NewDecoder(io.LimitReader(r.Body, 1<<20))
+	dec.DisallowUnknownFields()
+	if err := dec.Decode(dst); err != nil {
+		return err
+	}
 	return nil
 }
 
 func writeJSON(w http.ResponseWriter, status int, v any) {
-	w.Header().Set("Content-Type", "application/json; charset=utf-8"); w.Header().Set("Cache-Control", "no-store"); w.Header().Set("X-Content-Type-Options", "nosniff"); w.WriteHeader(status); _ = json.NewEncoder(w).Encode(v)
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.Header().Set("Cache-Control", "no-store")
+	w.Header().Set("X-Content-Type-Options", "nosniff")
+	w.WriteHeader(status)
+	_ = json.NewEncoder(w).Encode(v)
 }
-func writeError(w http.ResponseWriter, status int, err error) { writeJSON(w, status, map[string]string{"error": err.Error()}) }
+func writeError(w http.ResponseWriter, status int, err error) {
+	writeJSON(w, status, map[string]string{"error": err.Error()})
+}
 
 func requestLog(logger *slog.Logger, next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { start := time.Now(); next.ServeHTTP(w, r); logger.Info("request", "method", r.Method, "path", r.URL.Path, "duration_ms", time.Since(start).Milliseconds()) })
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		start := time.Now()
+		next.ServeHTTP(w, r)
+		logger.Info("request", "method", r.Method, "path", r.URL.Path, "duration_ms", time.Since(start).Milliseconds())
+	})
 }
