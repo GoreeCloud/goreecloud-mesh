@@ -96,7 +96,17 @@ func TestContractStableEligibilityAPI(t *testing.T) {
 	}
 
 	for _, platform := range contracts.Mandatory() {
-		body, err := json.Marshal(contracts.Evidence{Platform: platform, Contract: "v1", State: contracts.Validated, Source: "test"})
+		entry, ok := contracts.CatalogFor(platform)
+		if !ok {
+			t.Fatalf("catalog entry missing for %s", platform)
+		}
+		body, err := json.Marshal(contracts.Evidence{
+			Platform: platform,
+			Contract: entry.ContractSource,
+			State:    contracts.Validated,
+			Source:   "test-adapter",
+			Revision: "test-revision",
+		})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -123,6 +133,17 @@ func TestContractStableEligibilityAPI(t *testing.T) {
 func TestContractAPIRejectsUnknownPlatform(t *testing.T) {
 	h := testHandler(t)
 	body := []byte(`{"platform":"other","contract":"v1","state":"validated"}`)
+	request := httptest.NewRequest(http.MethodPost, "/v1/contracts", bytes.NewReader(body))
+	response := httptest.NewRecorder()
+	h.ServeHTTP(response, request)
+	if response.Code != http.StatusBadRequest {
+		t.Fatalf("status = %d body=%s", response.Code, response.Body.String())
+	}
+}
+
+func TestContractAPIRejectsNonCanonicalValidatedEvidence(t *testing.T) {
+	h := testHandler(t)
+	body := []byte(`{"platform":"wardveil-security","contract":"wardveil-runtime-v1","state":"validated","source":"test-adapter","revision":"test-revision"}`)
 	request := httptest.NewRequest(http.MethodPost, "/v1/contracts", bytes.NewReader(body))
 	response := httptest.NewRecorder()
 	h.ServeHTTP(response, request)
