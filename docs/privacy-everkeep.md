@@ -12,9 +12,13 @@ This model is a source-level privacy contract. Actual retention enforcement, era
 
 ## Everkeep boundary
 
-Everkeep governs resilience, backup, restore, portability, preservation, and recovery evidence. Mesh defines four source-level recovery capabilities that must be evidenced before recovery readiness can be considered satisfied: export, backup, restore, and verification.
+Everkeep governs resilience, backup, restore, portability, preservation, and recovery evidence. Mesh recovery evidence now uses the same five required dimensions declared by `docs/everkeep.acceptance.json`: `backup_coverage`, `restore_capability`, `portability`, `documentation`, and `provenance`.
 
-Recovery evidence records capability, state, source, optional revision, and observation time. Recovery readiness fails closed unless validated evidence exists for all four required capabilities. A true source-level result does not prove that a production backup exists or that a target-environment restore has succeeded.
+Each recovery-evidence record identifies its canonical dimension, state, authoritative source, exact lowercase 40-character source revision, observation time, and producer-defined validity boundary. Evidence with an unknown dimension or state, missing source, non-exact revision, future observation time, missing validity, non-forward validity, or expired validity fails closed for readiness.
+
+Recovery readiness requires current validated evidence for all five dimensions. Missing, degraded, unknown, malformed, or expired evidence cannot satisfy the source-level gate. Mesh does not define a universal freshness duration; `valid_until` remains supplied by the authoritative producer or applicable policy.
+
+A true source-level readiness result still does not prove that a production backup exists, that a target-environment restore has succeeded, or that Everkeep runtime acceptance has been granted. `docs/everkeep.acceptance.json` remains explicitly non-ready until target-runtime and exact-revision acceptance are completed.
 
 ## Authority and lifecycle
 
