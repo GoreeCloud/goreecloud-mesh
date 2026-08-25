@@ -52,14 +52,26 @@ func normalizeEvidence(v Evidence) (Evidence, error) {
 	v.Source = strings.TrimSpace(v.Source)
 	v.Revision = strings.TrimSpace(v.Revision)
 	v.Detail = strings.TrimSpace(v.Detail)
-	if !IsMandatory(v.Platform) {
+	entry, ok := CatalogFor(v.Platform)
+	if !ok || !entry.Required {
 		return Evidence{}, errors.New("platform is not a mandatory Mesh platform contract")
 	}
 	if v.Contract == "" {
 		return Evidence{}, errors.New("contract is required")
 	}
+	if v.Contract != entry.ContractSource {
+		return Evidence{}, errors.New("contract does not match the canonical Mesh platform catalog")
+	}
 	if v.State != Pending && v.State != Validated && v.State != Blocked {
 		return Evidence{}, errors.New("invalid contract state")
+	}
+	if v.State == Validated {
+		if v.Source == "" {
+			return Evidence{}, errors.New("validated runtime evidence requires a source")
+		}
+		if v.Revision == "" {
+			return Evidence{}, errors.New("validated runtime evidence requires a revision")
+		}
 	}
 	if v.ObservedAt.IsZero() {
 		v.ObservedAt = time.Now().UTC()
