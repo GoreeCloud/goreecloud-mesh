@@ -2,6 +2,7 @@ package contracts
 
 import (
 	"errors"
+	"regexp"
 	"sort"
 	"strings"
 	"sync"
@@ -19,6 +20,7 @@ const (
 )
 
 var mandatory = []Platform{GlazeUI, Wardveil, PrivacyShield, Everkeep}
+var fullGitRevisionPattern = regexp.MustCompile(`^[0-9a-f]{40}$`)
 
 type State string
 
@@ -48,10 +50,16 @@ type Registry struct {
 func NewRegistry() *Registry { return &Registry{evidence: map[Platform]Evidence{}} }
 
 func normalizeEvidence(v Evidence) (Evidence, error) {
+	return normalizeEvidenceAt(v, time.Now().UTC())
+}
+
+func normalizeEvidenceAt(v Evidence, evaluatedAt time.Time) (Evidence, error) {
 	v.Contract = strings.TrimSpace(v.Contract)
 	v.Source = strings.TrimSpace(v.Source)
 	v.Revision = strings.TrimSpace(v.Revision)
 	v.Detail = strings.TrimSpace(v.Detail)
+	evaluatedAt = evaluatedAt.UTC()
+
 	entry, ok := CatalogFor(v.Platform)
 	if !ok || !entry.Required {
 		return Evidence{}, errors.New("platform is not a mandatory Mesh platform contract")
@@ -69,14 +77,17 @@ func normalizeEvidence(v Evidence) (Evidence, error) {
 		if v.Source == "" {
 			return Evidence{}, errors.New("validated runtime evidence requires a source")
 		}
-		if v.Revision == "" {
-			return Evidence{}, errors.New("validated runtime evidence requires a revision")
+		if !fullGitRevisionPattern.MatchString(v.Revision) {
+			return Evidence{}, errors.New("validated runtime evidence requires an exact 40-character lowercase Git revision")
 		}
 	}
 	if v.ObservedAt.IsZero() {
-		v.ObservedAt = time.Now().UTC()
+		v.ObservedAt = evaluatedAt
 	} else {
 		v.ObservedAt = v.ObservedAt.UTC()
+		if v.ObservedAt.After(evaluatedAt) {
+			return Evidence{}, errors.New("runtime evidence observation time cannot be after evaluation time")
+		}
 	}
 	return v, nil
 }
