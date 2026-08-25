@@ -41,12 +41,13 @@ type Evidence struct {
 
 type Registry struct {
 	mu       sync.RWMutex
+	path     string
 	evidence map[Platform]Evidence
 }
 
 func NewRegistry() *Registry { return &Registry{evidence: map[Platform]Evidence{}} }
 
-func (r *Registry) Record(v Evidence) (Evidence, error) {
+func normalizeEvidence(v Evidence) (Evidence, error) {
 	v.Contract = strings.TrimSpace(v.Contract)
 	v.Source = strings.TrimSpace(v.Source)
 	v.Revision = strings.TrimSpace(v.Revision)
@@ -65,8 +66,27 @@ func (r *Registry) Record(v Evidence) (Evidence, error) {
 	} else {
 		v.ObservedAt = v.ObservedAt.UTC()
 	}
+	return v, nil
+}
+
+func (r *Registry) Record(v Evidence) (Evidence, error) {
+	v, err := normalizeEvidence(v)
+	if err != nil {
+		return Evidence{}, err
+	}
+
 	r.mu.Lock()
+	previous, hadPrevious := r.evidence[v.Platform]
 	r.evidence[v.Platform] = v
+	if err := r.persistLocked(); err != nil {
+		if hadPrevious {
+			r.evidence[v.Platform] = previous
+		} else {
+			delete(r.evidence, v.Platform)
+		}
+		r.mu.Unlock()
+		return Evidence{}, err
+	}
 	r.mu.Unlock()
 	return v, nil
 }
