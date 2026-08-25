@@ -34,7 +34,27 @@ func TestStableEligibilityFailsClosed(t *testing.T) {
 		}
 	}
 	if !r.StableEligible() {
-		t.Fatal("all mandatory validated contracts should be Stable eligible")
+		t.Fatal("all mandatory fresh validated contracts should be Stable eligible")
+	}
+}
+
+func TestStableEligibilityRejectsStaleValidatedEvidence(t *testing.T) {
+	evaluatedAt := time.Date(2026, 8, 25, 1, 0, 0, 0, time.UTC)
+	r := NewRegistry()
+	for _, p := range Mandatory() {
+		evidence := canonicalEvidence(t, p, Validated)
+		evidence.ObservedAt = evaluatedAt
+		validated, err := normalizeEvidenceAt(evidence, evaluatedAt)
+		if err != nil {
+			t.Fatalf("normalize %s: %v", p, err)
+		}
+		r.evidence[p] = validated
+	}
+	if !r.stableEligibleAt(evaluatedAt.Add(RuntimeEvidenceMaxAge)) {
+		t.Fatal("evidence at the freshness boundary should remain Stable eligible")
+	}
+	if r.stableEligibleAt(evaluatedAt.Add(RuntimeEvidenceMaxAge + time.Second)) {
+		t.Fatal("stale validated evidence must fail the Stable gate")
 	}
 }
 
