@@ -18,7 +18,7 @@ const (
 // EvidenceValidity declares who is authoritative for runtime-evidence validity.
 // Mesh may evaluate the declared deadline but may not extend or override it.
 type EvidenceValidity struct {
-	Authority                     string `json:"authority"`
+	Authority                      string `json:"authority"`
 	ValidUntilRequiredForValidated bool   `json:"valid_until_required_for_validated"`
 	ConsumerOverrideAllowed        bool   `json:"consumer_override_allowed"`
 }
