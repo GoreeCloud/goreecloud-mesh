@@ -13,6 +13,7 @@ const (
 	ScopePolicyEvaluate     = "mesh.policy.evaluate"
 	ScopeAttestationsWrite  = "mesh.attestations.write"
 	ScopeContractsWrite     = "mesh.contracts.write"
+	ScopeRecoveryWrite      = "mesh.everkeep.recovery.write"
 )
 
 func requireScope(verifier trust.Verifier, scope string, next http.HandlerFunc) http.HandlerFunc {
