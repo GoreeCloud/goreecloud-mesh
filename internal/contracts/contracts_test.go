@@ -1,6 +1,11 @@
 package contracts
 
-import "testing"
+import (
+	"testing"
+	"time"
+)
+
+const testRevision = "0123456789abcdef0123456789abcdef01234567"
 
 func canonicalEvidence(t *testing.T, platform Platform, state State) Evidence {
 	t.Helper()
@@ -13,7 +18,7 @@ func canonicalEvidence(t *testing.T, platform Platform, state State) Evidence {
 		Contract: entry.ContractSource,
 		State:    state,
 		Source:   "test-adapter",
-		Revision: "test-revision",
+		Revision: testRevision,
 	}
 }
 
@@ -64,7 +69,7 @@ func TestRuntimeEvidenceRejectsNonCanonicalContract(t *testing.T) {
 	}
 }
 
-func TestValidatedRuntimeEvidenceRequiresSourceAndRevision(t *testing.T) {
+func TestValidatedRuntimeEvidenceRequiresSourceAndExactRevision(t *testing.T) {
 	r := NewRegistry()
 	evidence := canonicalEvidence(t, Everkeep, Validated)
 	evidence.Source = ""
@@ -72,9 +77,29 @@ func TestValidatedRuntimeEvidenceRequiresSourceAndRevision(t *testing.T) {
 		t.Fatal("expected validated evidence without source to be rejected")
 	}
 
-	evidence = canonicalEvidence(t, Everkeep, Validated)
-	evidence.Revision = ""
-	if _, err := r.Record(evidence); err == nil {
-		t.Fatal("expected validated evidence without revision to be rejected")
+	for _, revision := range []string{"", "abc123", "0123456789ABCDEF0123456789ABCDEF01234567", "g123456789abcdef0123456789abcdef01234567"} {
+		evidence = canonicalEvidence(t, Everkeep, Validated)
+		evidence.Revision = revision
+		if _, err := r.Record(evidence); err == nil {
+			t.Fatalf("expected validated evidence revision %q to be rejected", revision)
+		}
+	}
+}
+
+func TestRuntimeEvidenceRejectsFutureObservation(t *testing.T) {
+	evaluatedAt := time.Date(2026, 8, 25, 0, 30, 0, 0, time.UTC)
+	evidence := canonicalEvidence(t, PrivacyShield, Validated)
+	evidence.ObservedAt = evaluatedAt.Add(time.Second)
+	if _, err := normalizeEvidenceAt(evidence, evaluatedAt); err == nil {
+		t.Fatal("expected future-dated runtime evidence to be rejected")
+	}
+
+	evidence.ObservedAt = evaluatedAt
+	got, err := normalizeEvidenceAt(evidence, evaluatedAt)
+	if err != nil {
+		t.Fatalf("current observation rejected: %v", err)
+	}
+	if !got.ObservedAt.Equal(evaluatedAt) {
+		t.Fatalf("observed_at = %s want %s", got.ObservedAt, evaluatedAt)
 	}
 }
