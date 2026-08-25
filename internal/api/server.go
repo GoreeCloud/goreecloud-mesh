@@ -12,20 +12,26 @@ import (
 	"github.com/GoreeCloud/goreecloud-mesh/internal/contracts"
 	"github.com/GoreeCloud/goreecloud-mesh/internal/mesh"
 	"github.com/GoreeCloud/goreecloud-mesh/internal/model"
+	"github.com/GoreeCloud/goreecloud-mesh/internal/trust"
 )
 
 type Server struct {
 	mesh         *mesh.Mesh
 	contracts    *contracts.Registry
 	attestations *contracts.SourceAttestationRegistry
+	verifier     trust.Verifier
 	logger       *slog.Logger
 }
 
 func New(m *mesh.Mesh, registry *contracts.Registry, logger *slog.Logger) http.Handler {
-	return NewWithAttestations(m, registry, contracts.NewSourceAttestationRegistry(), logger)
+	return NewAuthorized(m, registry, contracts.NewSourceAttestationRegistry(), nil, logger)
 }
 
 func NewWithAttestations(m *mesh.Mesh, registry *contracts.Registry, attestations *contracts.SourceAttestationRegistry, logger *slog.Logger) http.Handler {
+	return NewAuthorized(m, registry, attestations, nil, logger)
+}
+
+func NewAuthorized(m *mesh.Mesh, registry *contracts.Registry, attestations *contracts.SourceAttestationRegistry, verifier trust.Verifier, logger *slog.Logger) http.Handler {
 	if logger == nil {
 		logger = slog.Default()
 	}
@@ -39,24 +45,25 @@ func NewWithAttestations(m *mesh.Mesh, registry *contracts.Registry, attestation
 		mesh:         m,
 		contracts:    registry,
 		attestations: attestations,
+		verifier:     verifier,
 		logger:       logger,
 	}
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /healthz", s.health)
 	mux.HandleFunc("GET /v1/state", s.state)
 	mux.HandleFunc("GET /v1/services", s.services)
-	mux.HandleFunc("POST /v1/services", s.services)
+	mux.HandleFunc("POST /v1/services", requireScope(verifier, ScopeServicesWrite, s.services))
 	mux.HandleFunc("GET /v1/services/{id}", s.service)
 	mux.HandleFunc("GET /v1/capabilities/{capability}", s.capability)
-	mux.HandleFunc("POST /v1/relationships", s.relationships)
+	mux.HandleFunc("POST /v1/relationships", requireScope(verifier, ScopeRelationshipsWrite, s.relationships))
 	mux.HandleFunc("GET /v1/graph/impact", s.impact)
-	mux.HandleFunc("POST /v1/evaluate", s.evaluate)
+	mux.HandleFunc("POST /v1/evaluate", requireScope(verifier, ScopePolicyEvaluate, s.evaluate))
 	mux.HandleFunc("GET /v1/platforms", s.platforms)
 	mux.HandleFunc("GET /v1/platforms/status", s.platformStatuses)
 	mux.HandleFunc("GET /v1/platforms/source-attestations", s.sourceAttestationsList)
-	mux.HandleFunc("POST /v1/platforms/source-attestations", s.sourceAttestationsRecord)
+	mux.HandleFunc("POST /v1/platforms/source-attestations", requireScope(verifier, ScopeAttestationsWrite, s.sourceAttestationsRecord))
 	mux.HandleFunc("GET /v1/contracts", s.contractsList)
-	mux.HandleFunc("POST /v1/contracts", s.contractsRecord)
+	mux.HandleFunc("POST /v1/contracts", requireScope(verifier, ScopeContractsWrite, s.contractsRecord))
 	mux.HandleFunc("GET /v1/contracts/stable-eligibility", s.contractsStableEligibility)
 	return requestLog(logger, mux)
 }
