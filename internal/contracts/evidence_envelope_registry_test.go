@@ -71,18 +71,16 @@ func TestEvidenceEnvelopeRegistrySeparatesCurrentFromStale(t *testing.T) {
 func TestPersistentEvidenceEnvelopeRegistryReloadsExpiredEvidence(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "evidence.json")
-	now := time.Now().UTC()
+	evaluatedAt := time.Now().UTC().Add(-2 * time.Hour)
 	r, err := NewPersistentEvidenceEnvelopeRegistry(path)
 	if err != nil {
 		t.Fatal(err)
 	}
-	v := registryEnvelope(now)
-	v.ValidUntil = now.Add(50 * time.Millisecond)
-	if _, err := r.Record(v); err != nil {
+	v := registryEnvelope(evaluatedAt)
+	if _, err := r.recordAt(v, evaluatedAt); err != nil {
 		t.Fatal(err)
 	}
 
-	time.Sleep(80 * time.Millisecond)
 	reloaded, err := NewPersistentEvidenceEnvelopeRegistry(path)
 	if err != nil {
 		t.Fatalf("expired evidence must not block restart: %v", err)
