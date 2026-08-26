@@ -1,6 +1,6 @@
 # GoreeCloud Mesh API
 
-The initial Mesh API is a private-first JSON HTTP contract. It is intentionally small and does not imply public exposure or production authorization.
+The initial Mesh API is a private-first JSON HTTP contract. It does not imply public exposure or production authorization.
 
 ## Common behavior
 
@@ -8,8 +8,9 @@ The initial Mesh API is a private-first JSON HTTP contract. It is intentionally 
 - Responses include `Cache-Control: no-store` and `X-Content-Type-Options: nosniff`.
 - JSON request bodies are bounded to 1 MiB and reject unknown fields.
 - Identifiers are caller-supplied stable strings in the first milestone.
-- Mutating and policy-evaluation routes use the GoreeCloud Identity verifier boundary and dedicated least-privilege scopes. When a verifier is unavailable, protected routes fail closed with `401`; a verified principal without the required scope receives `403`.
-- Read-only inspection routes remain private-first. Production authorization and endpoint exposure remain separate acceptance work.
+- Protected routes use the GoreeCloud Identity verifier boundary and dedicated least-privilege scopes. When a verifier is unavailable, protected routes fail closed with `401`; a verified principal without the required scope receives `403`.
+- Evidence read routes require `mesh.evidence.read`; evidence delivery requires `mesh.evidence.write` plus producer-service identity binding.
+- Other read-only inspection routes remain private-first until their production authorization policies are separately accepted.
 
 ## Health
 
@@ -27,9 +28,7 @@ This is not a complete production-readiness or dependency-health signal.
 
 ### `GET /v1/state`
 
-Returns the current Registry and relationship state.
-
-This endpoint is intended for administrative inspection and testing. Future production authorization may restrict or replace broad state reads with narrower views.
+Returns the current Registry and relationship state. This endpoint is intended for administrative inspection and testing.
 
 ## Services
 
@@ -41,13 +40,7 @@ Lists registered services in deterministic ID order.
 
 Creates or replaces a service registration. Requires `mesh.services.write`.
 
-Required fields:
-
-- `id`
-- `name`
-- `kind`
-
-Supported health states are `unknown`, `healthy`, `degraded`, and `unavailable`.
+Required fields: `id`, `name`, and `kind`. Supported health states are `unknown`, `healthy`, `degraded`, and `unavailable`.
 
 ### `GET /v1/services/{id}`
 
@@ -91,119 +84,119 @@ Mesh Policy is one authorization input, not a substitute for application authori
 
 ### `GET /v1/platforms`
 
-Returns the canonical Mesh-side catalog of mandatory integral platform systems. Each entry records the system identifier, display name, repository, authority boundary, expected contract source, integration-manifest path, and whether the system is required.
-
-The catalog identifies Glaze UI as the design/interaction/accessibility authority, Wardveil Security as the security/protection authority, Privacy Shield as the privacy/data-minimization authority, and Everkeep as the resilience/recovery/preservation authority. Mesh does not acquire those authorities merely because it coordinates their evidence.
+Returns the canonical Mesh-side catalog of mandatory integral platform systems and their authority boundaries.
 
 ### `GET /v1/platforms/status`
 
-Returns one read-only integration-status record for each mandatory platform system by joining the canonical authority catalog with the latest bounded runtime contract evidence recorded in Mesh.
-
-The response also includes `source_attestations_validated`, which reports whether all four mandatory platform manifests have separately validated source attestations. Source provenance cannot satisfy runtime evidence requirements.
-
-Missing runtime evidence is explicitly pending and fail-closed. This endpoint does not authorize release, deployment, production acceptance, or Stable promotion.
+Returns a read-only joined source/runtime integration-status view. Missing runtime evidence is pending and fail-closed. This endpoint does not authorize release, deployment, production acceptance, or Stable promotion.
 
 ## Platform source attestations
 
 ### `GET /v1/platforms/source-attestations`
 
-Returns the current source-provenance attestations and `all_validated`, a fail-closed completeness result for the four mandatory integral platform systems.
+Returns source-provenance attestations and the current fail-closed completeness result for mandatory integral platform systems.
 
 ### `POST /v1/platforms/source-attestations`
 
-Records or replaces the latest source attestation for one mandatory platform. Requires `mesh.attestations.write`. Requests fail closed on catalog mismatches, malformed provenance, invalid validation state, or implied runtime/Stable acceptance.
+Records or replaces one source attestation. Requires `mesh.attestations.write`.
 
-Source attestations contain source provenance only. They do not imply runtime acceptance, production acceptance, deployment authorization, release authorization, or Stable qualification.
+Source attestations prove reviewed source provenance only. They do not imply runtime acceptance, production acceptance, deployment authorization, release authorization, or Stable qualification.
 
 ## Runtime platform contracts
 
 ### `GET /v1/contracts`
 
-Returns the four mandatory integral platform systems and the currently recorded runtime evidence entries.
+Returns mandatory integral platform systems and currently recorded runtime evidence entries.
 
 ### `POST /v1/contracts`
 
-Records or replaces one bounded runtime evidence entry. Requires `mesh.contracts.write`. The contract and producer repository must match the canonical platform catalog. Validated evidence requires identifiable source provenance, an exact lowercase 40-character Git revision, and producer-defined validity.
-
-Supported states are `pending`, `validated`, and `blocked`. Unknown platform systems, non-canonical contracts, invalid states, stale evidence, and untraceable validated evidence fail closed.
+Records or replaces one bounded runtime evidence entry. Requires `mesh.contracts.write`.
 
 ### `GET /v1/contracts/stable-eligibility`
 
-Returns the current fail-closed source-level Stable eligibility calculation together with the mandatory-system list and recorded evidence. This calculation is not production or Stable authorization.
+Returns the current fail-closed source-level Stable eligibility calculation. It is not production or Stable authorization.
 
 ## Producer evidence envelopes
 
-The GoreeCloud Evidence Envelope v1 is a transport/provenance contract. It keeps domain truth owned by the producer while allowing Mesh to persist, query, and transport bounded evidence metadata. See [`evidence-envelopes.md`](evidence-envelopes.md).
+The GoreeCloud Evidence Envelope v1 keeps domain truth owned by the producer while allowing Mesh to validate, persist, query, and transport bounded evidence metadata. See [`evidence-envelope.md`](evidence-envelope.md) and [`evidence-delivery.md`](evidence-delivery.md).
 
 ### `GET /v1/evidence/envelopes`
+
+Requires `mesh.evidence.read`.
 
 Lists immutable evidence envelopes in newest-observation-first order. Each returned item includes a derived `fresh` boolean evaluated against the producer-declared `valid_until` boundary.
 
 Optional exact-match query filters:
 
-- `current=true|false` — include only currently fresh or stale/expired records.
-- `producer=<producer-id>` — for example `wardveil-security`, `privacy-shield`, `everkeep`, `glaze-ui`, or `goreecloud-mesh`.
-- `authority_domain=<domain>` — for example `security`, `privacy`, `recovery`, `presentation`, or `governance`.
+- `current=true|false`
+- `producer=<producer-id>`
+- `authority_domain=<domain>`
 - `subject_kind=<kind>`
 - `subject_id=<id>`
 - `assertion=<assertion>`
 
-The response reports counts for the filtered result. `fresh: true` means only that the envelope is inside the producer-declared evidence validity window. It is not a positive domain verdict.
+`fresh: true` is timing metadata only and is never a positive domain verdict.
 
 ### `POST /v1/evidence/envelopes`
 
-Records one producer-authored evidence envelope. Requires `mesh.evidence.write`.
+Requires `mesh.evidence.write` and a verified producer service identity.
 
-The request must satisfy `goreecloud.evidence-envelope.v1`, including:
+The authenticated `service_id` must exactly match `producer.system`. Scope possession alone cannot be used by one GoreeCloud service to submit another producer's evidence.
 
-- a canonical producer system and repository;
-- an exact lowercase 40-character source revision;
-- a contract belonging to that producer;
-- an authority domain the producer actually owns;
-- a scoped subject;
-- assertion, outcome, source, observation time, and producer-declared validity window;
-- an allowed minimized data class (`public`, `operational`, or `derived`);
-- explicit `contains_user_content: false` and `contains_secret_material: false`;
-- an optional `sha256:<64 lowercase hex>` payload digest.
+The envelope must satisfy `goreecloud.evidence-envelope.v1`, including canonical repository/contract ownership, exact Git revision, owned authority domain, scoped subject, producer-declared validity, minimized data class, and explicit false user-content/secret-material flags.
 
-Evidence IDs are immutable. Replaying the exact same envelope is idempotent. Reusing an existing ID with different content fails closed. Fresh evidence is required at write time; expired evidence cannot be inserted as new current evidence.
+Evidence IDs are immutable:
+
+- first acceptance returns `201` and `replayed: false`;
+- an exact idempotent replay returns `200` and `replayed: true`;
+- the same ID with different content fails closed.
+
+The delivery receipt includes the accepted envelope, acceptance time, replay state, and authenticated producer service ID. It never includes the bearer credential.
 
 ### `GET /v1/evidence/envelopes/{id}`
 
-Returns one immutable envelope and its current derived `fresh` state, or `404` when unknown.
+Requires `mesh.evidence.read`.
 
-Expired evidence remains readable after its validity window for audit/provenance purposes. Expiration does not delete history and does not prevent Mesh from restarting.
+Returns one immutable envelope and its current derived `fresh` state, or `404` when unknown. Expired evidence remains readable for audit/provenance history.
 
 ### `GET /v1/evidence/status`
 
-Returns current/stale counts overall and by producer.
+Requires `mesh.evidence.read`.
 
-This endpoint is evidence-transport and freshness status only. It must not be interpreted as a security, privacy, recovery, continuity, or design-conformance verdict.
+Returns current/stale counts overall and by producer. This is transport/freshness status only, not security, privacy, recovery, continuity, or design-conformance truth.
+
+### `GET /v1/evidence/subjects/{kind}/{id}`
+
+Requires `mesh.evidence.read`.
+
+Returns the consumer-oriented evidence view for one subject. An optional `scope=<scope>` query parameter narrows the view.
+
+The response contains:
+
+- `subject`
+- `transport.state` (`available` for a successful Mesh read)
+- current/stale envelope counts
+- independent producer/authority groups
+- assertion groups containing `latest`, optional `latest_current`, and `history_count`
+
+Mesh preserves producer outcomes verbatim and deliberately does not return an overall security/privacy/recovery/conformance verdict. This is the read model consumed by the Glaze UI 1.6 Candidate Mesh evidence consumer.
 
 ## Everkeep recovery evidence
 
 ### `GET /v1/everkeep/recovery-evidence`
 
-Returns the currently recorded Mesh-owned Everkeep recovery evidence, the canonical required dimensions, and the current fail-closed recovery-readiness result.
+Returns the currently recorded Mesh-owned Everkeep recovery evidence and fail-closed recovery-readiness result.
 
-Required dimensions are:
-
-- `backup_coverage`
-- `restore_capability`
-- `portability`
-- `documentation`
-- `provenance`
-
-Every usable evidence item must carry the canonical dimension, a bounded state, an authoritative source, an exact lowercase 40-character source revision, an observation time, and a producer-defined `valid_until` boundary. Expired, future-dated, malformed, missing, degraded, or unknown evidence cannot satisfy recovery readiness.
+Required dimensions are `backup_coverage`, `restore_capability`, `portability`, `documentation`, and `provenance`.
 
 ### `POST /v1/everkeep/recovery-evidence`
 
-Records or replaces evidence for one canonical recovery dimension. Requires `mesh.everkeep.recovery.write`.
+Requires `mesh.everkeep.recovery.write`.
 
 The endpoint accepts metadata and evidence state only. Passwords, tokens, recovery codes, private keys, secret values, backup contents, and application payload content must not be recorded.
 
 ### `GET /v1/everkeep/recovery-readiness`
 
-Returns the fail-closed readiness evaluation across all five canonical Everkeep application dimensions.
+Returns fail-closed readiness across the canonical Everkeep application dimensions.
 
-A `ready: true` response means only that the recorded source-level evidence set is complete, structurally valid, currently within producer-declared validity, and marked validated. It does not prove that a production backup exists, that a target-environment restore succeeded, that Everkeep runtime acceptance is complete, or that GoreeCloud Mesh qualifies for Stable release.
+A `ready: true` response means only that the recorded source-level evidence set is complete, structurally valid, currently within producer-declared validity, and marked validated. It does not prove production restore success or Stable qualification.
