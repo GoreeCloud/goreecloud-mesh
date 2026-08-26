@@ -22,6 +22,7 @@ func main() {
 	statePath := flag.String("state", "./mesh-state.json", "durable Mesh state path; empty disables persistence")
 	attestationPath := flag.String("source-attestations", "./mesh-source-attestations.json", "durable source-attestation state path; empty disables persistence")
 	runtimeEvidencePath := flag.String("runtime-evidence", "./mesh-runtime-evidence.json", "durable runtime contract evidence path; empty disables persistence")
+	evidenceEnvelopePath := flag.String("evidence-envelopes", "./mesh-evidence-envelopes.json", "durable producer-authoritative evidence envelope path; empty disables persistence")
 	recoveryEvidencePath := flag.String("everkeep-recovery-evidence", "./mesh-everkeep-recovery-evidence.json", "durable Everkeep recovery evidence path; empty disables persistence")
 	flag.Parse()
 
@@ -44,13 +45,19 @@ func main() {
 		os.Exit(1)
 	}
 
+	evidenceEnvelopeRegistry, err := contracts.NewPersistentEvidenceEnvelopeRegistry(*evidenceEnvelopePath)
+	if err != nil {
+		logger.Error("load evidence envelopes", "error", err)
+		os.Exit(1)
+	}
+
 	recoveryRegistry, err := governance.NewPersistentRecoveryRegistry(*recoveryEvidencePath, time.Now().UTC())
 	if err != nil {
 		logger.Error("load Everkeep recovery evidence", "error", err)
 		os.Exit(1)
 	}
 
-	handler := meshapi.NewAuthorizedWithRecovery(mesh.New(state), contractRegistry, attestationRegistry, recoveryRegistry, nil, logger)
+	handler := meshapi.NewAuthorizedWithRecoveryAndEvidence(mesh.New(state), contractRegistry, attestationRegistry, recoveryRegistry, evidenceEnvelopeRegistry, nil, logger)
 	server := &http.Server{
 		Addr:              *listen,
 		Handler:           handler,
@@ -62,7 +69,7 @@ func main() {
 
 	errCh := make(chan error, 1)
 	go func() {
-		logger.Info("mesh starting", "listen", *listen, "state", *statePath, "source_attestations", *attestationPath, "runtime_evidence", *runtimeEvidencePath, "everkeep_recovery_evidence", *recoveryEvidencePath)
+		logger.Info("mesh starting", "listen", *listen, "state", *statePath, "source_attestations", *attestationPath, "runtime_evidence", *runtimeEvidencePath, "evidence_envelopes", *evidenceEnvelopePath, "everkeep_recovery_evidence", *recoveryEvidencePath)
 		errCh <- server.ListenAndServe()
 	}()
 
