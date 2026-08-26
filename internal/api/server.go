@@ -76,10 +76,11 @@ func NewAuthorizedWithRecoveryAndEvidence(m *mesh.Mesh, registry *contracts.Regi
 	mux.HandleFunc("GET /v1/contracts", s.contractsList)
 	mux.HandleFunc("POST /v1/contracts", requireScope(verifier, ScopeContractsWrite, s.contractsRecord))
 	mux.HandleFunc("GET /v1/contracts/stable-eligibility", s.contractsStableEligibility)
-	mux.HandleFunc("GET /v1/evidence/envelopes", s.evidenceEnvelopesList)
+	mux.HandleFunc("GET /v1/evidence/envelopes", requireScope(verifier, ScopeEvidenceRead, s.evidenceEnvelopesList))
 	mux.HandleFunc("POST /v1/evidence/envelopes", requireScope(verifier, ScopeEvidenceWrite, s.evidenceEnvelopesRecord))
-	mux.HandleFunc("GET /v1/evidence/envelopes/{id}", s.evidenceEnvelopeGet)
-	mux.HandleFunc("GET /v1/evidence/status", s.evidenceStatus)
+	mux.HandleFunc("GET /v1/evidence/envelopes/{id}", requireScope(verifier, ScopeEvidenceRead, s.evidenceEnvelopeGet))
+	mux.HandleFunc("GET /v1/evidence/status", requireScope(verifier, ScopeEvidenceRead, s.evidenceStatus))
+	mux.HandleFunc("GET /v1/evidence/subjects/{kind}/{id}", requireScope(verifier, ScopeEvidenceRead, s.evidenceSubject))
 	mux.HandleFunc("GET /v1/everkeep/recovery-evidence", s.recoveryEvidenceList)
 	mux.HandleFunc("POST /v1/everkeep/recovery-evidence", requireScope(verifier, ScopeRecoveryWrite, s.recoveryEvidenceRecord))
 	mux.HandleFunc("GET /v1/everkeep/recovery-readiness", s.recoveryReadiness)
@@ -261,12 +262,28 @@ func (s *Server) evidenceEnvelopesRecord(w http.ResponseWriter, r *http.Request)
 		writeError(w, http.StatusBadRequest, err)
 		return
 	}
-	recorded, err := s.envelopes.Record(envelope)
+	principal, err := validateEvidenceProducerPrincipal(r, envelope)
+	if err != nil {
+		writeError(w, http.StatusForbidden, err)
+		return
+	}
+	result, err := s.envelopes.RecordWithResult(envelope)
 	if err != nil {
 		writeError(w, http.StatusBadRequest, err)
 		return
 	}
-	writeJSON(w, http.StatusCreated, evidenceEnvelopeView{EvidenceEnvelope: recorded, Fresh: true})
+	status := http.StatusCreated
+	if result.Replayed {
+		status = http.StatusOK
+	}
+	acceptedAt := time.Now().UTC()
+	writeJSON(w, status, evidenceDeliveryReceipt{
+		Envelope:          evidenceEnvelopeView{EvidenceEnvelope: result.Envelope, Fresh: result.Envelope.FreshAt(acceptedAt)},
+		Replayed:          result.Replayed,
+		AcceptedAt:        acceptedAt,
+		ProducerServiceID: principal.ServiceID,
+		Note:              "Mesh accepted transport from the authenticated producer service. Acceptance does not upgrade or reinterpret producer domain truth.",
+	})
 }
 
 func (s *Server) evidenceEnvelopeGet(w http.ResponseWriter, r *http.Request) {
@@ -306,6 +323,17 @@ func (s *Server) evidenceStatus(w http.ResponseWriter, _ *http.Request) {
 		"by_producer": byProducer,
 		"note":        "This is evidence transport/freshness state. It is not a security, privacy, recovery, continuity, or design-conformance verdict.",
 	})
+}
+
+func (s *Server) evidenceSubject(w http.ResponseWriter, r *http.Request) {
+	kind := strings.TrimSpace(r.PathValue("kind"))
+	id := strings.TrimSpace(r.PathValue("id"))
+	if kind == "" || id == "" {
+		writeError(w, http.StatusBadRequest, errors.New("evidence subject kind and id are required"))
+		return
+	}
+	view := buildEvidenceSubjectView(s.envelopes.List(), kind, id, r.URL.Query().Get("scope"), time.Now().UTC())
+	writeJSON(w, http.StatusOK, view)
 }
 
 func matchesEvidenceEnvelopeQuery(envelope contracts.EvidenceEnvelope, r *http.Request) bool {
