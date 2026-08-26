@@ -70,7 +70,7 @@ func TestNormalizeEvidenceEnvelopeRejectsAuthorityEscalation(t *testing.T) {
 func TestNormalizeEvidenceEnvelopeRejectsRawUserContentAndSecrets(t *testing.T) {
 	now := time.Date(2026, time.August, 26, 22, 30, 0, 0, time.UTC)
 	for name, mutate := range map[string]func(*EvidenceEnvelope){
-		"user content": func(v *EvidenceEnvelope) { v.ContainsUserContent = true },
+		"user content":    func(v *EvidenceEnvelope) { v.ContainsUserContent = true },
 		"secret material": func(v *EvidenceEnvelope) { v.ContainsSecretMaterial = true },
 	} {
 		t.Run(name, func(t *testing.T) {
