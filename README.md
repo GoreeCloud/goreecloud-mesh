@@ -6,20 +6,20 @@ Mesh does not replace GoreeCloud Manager, Monitor, Network, Gateway, Identity, G
 
 ## Foundation scope
 
-The initial native foundation provides:
+The native foundation provides:
 
 - **Mesh Registry** — durable registry of applications, services, capabilities, dependencies, endpoints, health, and platform-conformance state.
 - **Mesh Graph** — explicit service relationships and transitive dependency-impact analysis.
 - **Mesh Policy** — fail-closed evaluation of registered relationships and requested capabilities.
 - **Mesh Events** — bounded in-process event publication for registry and relationship lifecycle changes.
-- **Mesh Nodes** — service/node identity and operational-state records through the registry model.
-- **Mesh Connections** — explicit, versionable relationships between registered components.
-- **Mesh Platform Catalog** — machine-readable authority and contract-source metadata for Glaze UI, Wardveil Security, Privacy Shield, and Everkeep without transferring those systems' authority into Mesh.
-- **Mesh Platform Status** — read-only joined authority/evidence status that makes missing and non-validated platform evidence explicit and fail-closed.
-- **Mesh Source Attestations** — durable exact-source provenance for reviewed platform integration manifests, kept independent from runtime and Stable acceptance.
-- **Mesh Runtime Evidence** — durable bounded runtime contract evidence for mandatory integral platform systems, bound to each platform's canonical producer repository, canonical contract source, exact Git revision, and observation time while remaining separate from source provenance and Stable acceptance.
-- **Mesh Evidence Envelopes** — durable immutable transport records for minimized producer-authoritative evidence. Mesh validates canonical producer identity, contract ownership, authority domain, exact source revision, bounded freshness, subject scope, minimization flags, and optional payload digest without taking ownership of the producer's domain truth.
-- **Mesh API** — private-first HTTP interface for discovery, registration, graph inspection, platform catalog/status inspection, source-provenance inspection, runtime-evidence inspection, producer evidence-envelope inspection, and policy evaluation.
+- **Mesh Nodes and Connections** — service/node identity, operational state, and explicit versionable relationships.
+- **Mesh Platform Catalog and Status** — authority/contract metadata and joined integration status for Glaze UI, Wardveil Security, Privacy Shield, and Everkeep without transferring their authority into Mesh.
+- **Mesh Source Attestations** — durable exact-source provenance kept independent from runtime and Stable acceptance.
+- **Mesh Runtime Evidence** — bounded runtime contract evidence bound to canonical repositories, contracts, exact revisions, and observation time.
+- **Mesh Evidence Envelopes** — durable immutable transport records for minimized producer-authoritative evidence with canonical producer/contract/authority validation, freshness, scoped subjects, minimization flags, and optional digest binding.
+- **Authenticated Evidence Delivery** — `mesh.evidence.write` plus exact producer-service identity binding for ingestion, and `mesh.evidence.read` for inspection/consumer views.
+- **Evidence Subject Views** — producer/authority/assertion-separated consumer models that expose latest/current evidence without manufacturing an overall security, privacy, recovery, continuity, or conformance verdict.
+- **Mesh API** — private-first HTTP interface for discovery, registration, graph inspection, platform evidence, producer evidence, and policy evaluation.
 - **Mesh Console** — planned Glaze UI administrative experience; not yet represented as complete.
 
 ## Architecture principles
@@ -28,14 +28,13 @@ The initial native foundation provides:
 - Stable, documented APIs instead of direct database or filesystem coupling.
 - Each participating application remains authoritative for its own data and business rules.
 - Least privilege and explicit relationships rather than ambient trust.
-- Health-aware failure isolation and dependency-impact visibility.
 - Privacy-conscious metadata: Mesh records only coordination and minimized evidence information necessary to operate relationships and evidence transport.
 - Durable, atomic local state with no external database dependency in the first milestone.
 - Source provenance remains separate from runtime evidence and cannot satisfy Stable gates by itself.
-- Runtime evidence persistence does not create or infer runtime acceptance; validated evidence must bind to the canonical producer repository, canonical contract source, exact Git revision, and non-future observation time.
-- Evidence-envelope transport validity does not create or upgrade security, privacy, recovery, continuity, or design-conformance truth. Wardveil Security, Privacy Shield, Everkeep, and Glaze UI retain their own authority.
-- Expired evidence remains auditable in durable storage but cannot satisfy a current-evidence query. Normal evidence expiry must not prevent Mesh from restarting.
-- Mandatory Glaze UI, Wardveil Security, Privacy Shield, and Everkeep contracts are tracked as release gates; this foundation does **not** claim Stable conformance yet.
+- Evidence transport validity never creates or upgrades security, privacy, recovery, continuity, or design-conformance truth.
+- A write scope is insufficient to impersonate another producer: the verified service identity must match the envelope producer.
+- Expired evidence remains auditable but cannot satisfy current-evidence queries; normal expiry must not prevent restart.
+- Mandatory Glaze UI, Wardveil Security, Privacy Shield, and Everkeep contracts remain release gates; this foundation does **not** claim Stable conformance.
 
 ## Run
 
@@ -49,37 +48,21 @@ go run ./cmd/mesh \
   -everkeep-recovery-evidence ./mesh-everkeep-recovery-evidence.json
 ```
 
-The default listen address is loopback-only. Source attestations, runtime contract evidence, producer evidence envelopes, and Everkeep recovery evidence are persisted atomically to separate restrictive-permission JSON state files by default. Passing an empty value for a persistence flag disables that store for test or ephemeral operation. Public exposure is not part of this milestone.
+The default listen address is loopback-only. Persistent stores are written atomically to separate restrictive-permission JSON files. Passing an empty persistence path disables that store for test or ephemeral operation.
 
-## API
+## Evidence API
 
-Key initial endpoints:
+Authenticated evidence routes include:
 
-- `GET /healthz`
-- `GET /v1/state`
-- `GET /v1/services`
-- `POST /v1/services`
-- `GET /v1/services/{id}`
-- `GET /v1/capabilities/{capability}`
-- `POST /v1/relationships`
-- `GET /v1/graph/impact?id=<service-id>`
-- `POST /v1/evaluate`
-- `GET /v1/platforms`
-- `GET /v1/platforms/status`
-- `GET /v1/platforms/source-attestations`
-- `POST /v1/platforms/source-attestations`
-- `GET /v1/contracts`
-- `POST /v1/contracts`
-- `GET /v1/contracts/stable-eligibility`
-- `GET /v1/evidence/envelopes`
-- `POST /v1/evidence/envelopes`
-- `GET /v1/evidence/envelopes/{id}`
-- `GET /v1/evidence/status`
-- `GET /v1/everkeep/recovery-evidence`
-- `POST /v1/everkeep/recovery-evidence`
-- `GET /v1/everkeep/recovery-readiness`
+- `GET /v1/evidence/envelopes` — requires `mesh.evidence.read`.
+- `POST /v1/evidence/envelopes` — requires `mesh.evidence.write` and a producer-matching verified service identity.
+- `GET /v1/evidence/envelopes/{id}` — requires `mesh.evidence.read`.
+- `GET /v1/evidence/status` — requires `mesh.evidence.read`.
+- `GET /v1/evidence/subjects/{kind}/{id}` — requires `mesh.evidence.read` and returns the authority-separated consumer view.
 
-See [`docs/api.md`](docs/api.md), [`docs/evidence-envelopes.md`](docs/evidence-envelopes.md), and [`docs/architecture.md`](docs/architecture.md).
+A first accepted envelope returns `201`; an exact immutable replay returns `200` with `replayed: true`.
+
+See [`docs/api.md`](docs/api.md), [`docs/evidence-envelope.md`](docs/evidence-envelope.md), [`docs/evidence-delivery.md`](docs/evidence-delivery.md), and [`docs/architecture.md`](docs/architecture.md).
 
 ## Validation
 
@@ -89,11 +72,11 @@ go vet ./...
 go test ./...
 ```
 
-CI runs formatting validation, vetting, tests, and the platform-conformance contract validator.
+CI runs formatting validation, vetting, tests, build validation, and platform contract checks.
 
 ## Release boundary
 
-This repository is in **Development**. The native coordination core, durable evidence-envelope registry, and private-first evidence API are source-level foundations only. They do not independently prove that any producer is deployed, accepted in a target runtime, or production-ready. Production deployment, public/private DNS publication, Gateway routing, Identity-backed authentication, external event delivery, Monitoring adapters, persistent multi-node coordination, Mesh Console completion, producer runtime delivery into the evidence registry, and runtime acceptance of Glaze UI, Wardveil Security, Privacy Shield, and Everkeep remain separate acceptance gates.
+This repository is in **Development**. The source now contains the durable evidence registry, authenticated read/write enforcement, producer-bound delivery receipts, consumer subject views, and reference integration contracts. It does not independently establish a deployed GoreeCloud Identity verifier, production Gateway/Network/TLS routing, DNS publication, multi-node replication, target-environment producer delivery, Mesh Console completion, or production/Stable acceptance of the integral platform systems.
 
 ## License
 
