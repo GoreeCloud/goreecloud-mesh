@@ -1,0 +1,171 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://goreecloud.org/contracts/mesh.evidence-envelope.schema.json",
+  "title": "GoreeCloud Mesh Evidence Envelope v1",
+  "description": "Bounded transport envelope for producer-authoritative GoreeCloud evidence. Mesh validates provenance, freshness, minimization, and declared authority without inheriting the producer's domain authority.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "id",
+    "producer",
+    "authority_domain",
+    "subject",
+    "assertion",
+    "outcome",
+    "source",
+    "observed_at",
+    "valid_until",
+    "data_class",
+    "contains_user_content",
+    "contains_secret_material"
+  ],
+  "properties": {
+    "version": {
+      "const": "goreecloud.evidence-envelope.v1"
+    },
+    "id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "producer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["system", "repository", "revision", "contract"],
+      "properties": {
+        "system": {
+          "enum": [
+            "goreecloud-mesh",
+            "glaze-ui",
+            "wardveil-security",
+            "privacy-shield",
+            "everkeep"
+          ]
+        },
+        "repository": {
+          "type": "string",
+          "minLength": 1
+        },
+        "revision": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{40}$"
+        },
+        "contract": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "authority_domain": {
+      "enum": [
+        "coordination",
+        "governance",
+        "presentation",
+        "design-conformance",
+        "security",
+        "privacy",
+        "resilience",
+        "recovery",
+        "preservation",
+        "continuity"
+      ]
+    },
+    "subject": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "id"],
+      "properties": {
+        "kind": {"type": "string", "minLength": 1},
+        "id": {"type": "string", "minLength": 1},
+        "scope": {"type": "string"}
+      }
+    },
+    "assertion": {
+      "type": "string",
+      "minLength": 1
+    },
+    "outcome": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Producer-defined result. Mesh must not reinterpret this value outside the producer contract."
+    },
+    "source": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Opaque producer-controlled evidence reference. It must not contain credentials or raw private content."
+    },
+    "observed_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "valid_until": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "data_class": {
+      "enum": ["public", "operational", "derived"]
+    },
+    "summary": {
+      "type": "string",
+      "maxLength": 512
+    },
+    "payload_digest": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "contains_user_content": {
+      "const": false
+    },
+    "contains_secret_material": {
+      "const": false
+    }
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"producer": {"properties": {"system": {"const": "goreecloud-mesh"}}}}},
+      "then": {
+        "properties": {
+          "producer": {"properties": {"repository": {"const": "GoreeCloud/goreecloud-mesh"}}},
+          "authority_domain": {"enum": ["coordination", "governance"]}
+        }
+      }
+    },
+    {
+      "if": {"properties": {"producer": {"properties": {"system": {"const": "glaze-ui"}}}}},
+      "then": {
+        "properties": {
+          "producer": {"properties": {"repository": {"const": "GoreeCloud/glaze-ui"}}},
+          "authority_domain": {"enum": ["presentation", "design-conformance"]}
+        }
+      }
+    },
+    {
+      "if": {"properties": {"producer": {"properties": {"system": {"const": "wardveil-security"}}}}},
+      "then": {
+        "properties": {
+          "producer": {"properties": {"repository": {"const": "GoreeCloud/goreecloud-wardveil-security"}}},
+          "authority_domain": {"const": "security"}
+        }
+      }
+    },
+    {
+      "if": {"properties": {"producer": {"properties": {"system": {"const": "privacy-shield"}}}}},
+      "then": {
+        "properties": {
+          "producer": {"properties": {"repository": {"const": "GoreeCloud/goreecloud-privacy-shield"}}},
+          "authority_domain": {"const": "privacy"}
+        }
+      }
+    },
+    {
+      "if": {"properties": {"producer": {"properties": {"system": {"const": "everkeep"}}}}},
+      "then": {
+        "properties": {
+          "producer": {"properties": {"repository": {"const": "GoreeCloud/goreecloud-everkeep"}}},
+          "authority_domain": {"enum": ["resilience", "recovery", "preservation", "continuity"]}
+        }
+      }
+    }
+  ]
+}
