@@ -21,23 +21,28 @@ type Server struct {
 	contracts    *contracts.Registry
 	attestations *contracts.SourceAttestationRegistry
 	recovery     *governance.RecoveryRegistry
+	envelopes    *contracts.EvidenceEnvelopeRegistry
 	verifier     trust.Verifier
 	logger       *slog.Logger
 }
 
 func New(m *mesh.Mesh, registry *contracts.Registry, logger *slog.Logger) http.Handler {
-	return NewAuthorizedWithRecovery(m, registry, contracts.NewSourceAttestationRegistry(), governance.NewRecoveryRegistry(), nil, logger)
+	return NewAuthorizedWithRecoveryAndEvidence(m, registry, contracts.NewSourceAttestationRegistry(), governance.NewRecoveryRegistry(), contracts.NewEvidenceEnvelopeRegistry(), nil, logger)
 }
 
 func NewWithAttestations(m *mesh.Mesh, registry *contracts.Registry, attestations *contracts.SourceAttestationRegistry, logger *slog.Logger) http.Handler {
-	return NewAuthorizedWithRecovery(m, registry, attestations, governance.NewRecoveryRegistry(), nil, logger)
+	return NewAuthorizedWithRecoveryAndEvidence(m, registry, attestations, governance.NewRecoveryRegistry(), contracts.NewEvidenceEnvelopeRegistry(), nil, logger)
 }
 
 func NewAuthorized(m *mesh.Mesh, registry *contracts.Registry, attestations *contracts.SourceAttestationRegistry, verifier trust.Verifier, logger *slog.Logger) http.Handler {
-	return NewAuthorizedWithRecovery(m, registry, attestations, governance.NewRecoveryRegistry(), verifier, logger)
+	return NewAuthorizedWithRecoveryAndEvidence(m, registry, attestations, governance.NewRecoveryRegistry(), contracts.NewEvidenceEnvelopeRegistry(), verifier, logger)
 }
 
 func NewAuthorizedWithRecovery(m *mesh.Mesh, registry *contracts.Registry, attestations *contracts.SourceAttestationRegistry, recovery *governance.RecoveryRegistry, verifier trust.Verifier, logger *slog.Logger) http.Handler {
+	return NewAuthorizedWithRecoveryAndEvidence(m, registry, attestations, recovery, contracts.NewEvidenceEnvelopeRegistry(), verifier, logger)
+}
+
+func NewAuthorizedWithRecoveryAndEvidence(m *mesh.Mesh, registry *contracts.Registry, attestations *contracts.SourceAttestationRegistry, recovery *governance.RecoveryRegistry, envelopes *contracts.EvidenceEnvelopeRegistry, verifier trust.Verifier, logger *slog.Logger) http.Handler {
 	if logger == nil {
 		logger = slog.Default()
 	}
@@ -50,7 +55,10 @@ func NewAuthorizedWithRecovery(m *mesh.Mesh, registry *contracts.Registry, attes
 	if recovery == nil {
 		recovery = governance.NewRecoveryRegistry()
 	}
-	s := &Server{mesh: m, contracts: registry, attestations: attestations, recovery: recovery, verifier: verifier, logger: logger}
+	if envelopes == nil {
+		envelopes = contracts.NewEvidenceEnvelopeRegistry()
+	}
+	s := &Server{mesh: m, contracts: registry, attestations: attestations, recovery: recovery, envelopes: envelopes, verifier: verifier, logger: logger}
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /healthz", s.health)
 	mux.HandleFunc("GET /v1/state", s.state)
@@ -68,6 +76,10 @@ func NewAuthorizedWithRecovery(m *mesh.Mesh, registry *contracts.Registry, attes
 	mux.HandleFunc("GET /v1/contracts", s.contractsList)
 	mux.HandleFunc("POST /v1/contracts", requireScope(verifier, ScopeContractsWrite, s.contractsRecord))
 	mux.HandleFunc("GET /v1/contracts/stable-eligibility", s.contractsStableEligibility)
+	mux.HandleFunc("GET /v1/evidence/envelopes", s.evidenceEnvelopesList)
+	mux.HandleFunc("POST /v1/evidence/envelopes", requireScope(verifier, ScopeEvidenceWrite, s.evidenceEnvelopesRecord))
+	mux.HandleFunc("GET /v1/evidence/envelopes/{id}", s.evidenceEnvelopeGet)
+	mux.HandleFunc("GET /v1/evidence/status", s.evidenceStatus)
 	mux.HandleFunc("GET /v1/everkeep/recovery-evidence", s.recoveryEvidenceList)
 	mux.HandleFunc("POST /v1/everkeep/recovery-evidence", requireScope(verifier, ScopeRecoveryWrite, s.recoveryEvidenceRecord))
 	mux.HandleFunc("GET /v1/everkeep/recovery-readiness", s.recoveryReadiness)
@@ -200,6 +212,136 @@ func (s *Server) contractsRecord(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) contractsStableEligibility(w http.ResponseWriter, _ *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]any{"stable_eligible": s.contracts.StableEligible(), "mandatory": contracts.Mandatory(), "evidence": s.contracts.List()})
+}
+
+type evidenceEnvelopeView struct {
+	contracts.EvidenceEnvelope
+	Fresh bool `json:"fresh"`
+}
+
+func (s *Server) evidenceEnvelopesList(w http.ResponseWriter, r *http.Request) {
+	currentOnly, err := parseOptionalBool(r.URL.Query().Get("current"))
+	if err != nil {
+		writeError(w, http.StatusBadRequest, err)
+		return
+	}
+
+	now := time.Now().UTC()
+	items := s.envelopes.List()
+	views := make([]evidenceEnvelopeView, 0, len(items))
+	current := 0
+	stale := 0
+	for _, envelope := range items {
+		fresh := envelope.FreshAt(now)
+		if currentOnly != nil && *currentOnly != fresh {
+			continue
+		}
+		if !matchesEvidenceEnvelopeQuery(envelope, r) {
+			continue
+		}
+		if fresh {
+			current++
+		} else {
+			stale++
+		}
+		views = append(views, evidenceEnvelopeView{EvidenceEnvelope: envelope, Fresh: fresh})
+	}
+	writeJSON(w, http.StatusOK, map[string]any{
+		"count":         len(views),
+		"current_count": current,
+		"stale_count":   stale,
+		"envelopes":     views,
+		"note":          "Freshness describes producer-declared evidence validity only. Mesh transport acceptance does not upgrade producer domain truth.",
+	})
+}
+
+func (s *Server) evidenceEnvelopesRecord(w http.ResponseWriter, r *http.Request) {
+	var envelope contracts.EvidenceEnvelope
+	if err := decodeJSON(r, &envelope); err != nil {
+		writeError(w, http.StatusBadRequest, err)
+		return
+	}
+	recorded, err := s.envelopes.Record(envelope)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, err)
+		return
+	}
+	writeJSON(w, http.StatusCreated, evidenceEnvelopeView{EvidenceEnvelope: recorded, Fresh: true})
+}
+
+func (s *Server) evidenceEnvelopeGet(w http.ResponseWriter, r *http.Request) {
+	id := strings.TrimSpace(r.PathValue("id"))
+	if id == "" {
+		writeError(w, http.StatusBadRequest, errors.New("evidence envelope id is required"))
+		return
+	}
+	envelope, ok := s.envelopes.Get(id)
+	if !ok {
+		writeError(w, http.StatusNotFound, errors.New("evidence envelope not found"))
+		return
+	}
+	writeJSON(w, http.StatusOK, evidenceEnvelopeView{EvidenceEnvelope: envelope, Fresh: envelope.FreshAt(time.Now().UTC())})
+}
+
+func (s *Server) evidenceStatus(w http.ResponseWriter, _ *http.Request) {
+	now := time.Now().UTC()
+	type counts struct {
+		Current int `json:"current"`
+		Stale   int `json:"stale"`
+	}
+	byProducer := map[contracts.EvidenceProducerID]counts{}
+	for _, envelope := range s.envelopes.List() {
+		v := byProducer[envelope.Producer.System]
+		if envelope.FreshAt(now) {
+			v.Current++
+		} else {
+			v.Stale++
+		}
+		byProducer[envelope.Producer.System] = v
+	}
+	current, stale := s.envelopes.CountsAt(now)
+	writeJSON(w, http.StatusOK, map[string]any{
+		"current":     current,
+		"stale":       stale,
+		"by_producer": byProducer,
+		"note":        "This is evidence transport/freshness state. It is not a security, privacy, recovery, continuity, or design-conformance verdict.",
+	})
+}
+
+func matchesEvidenceEnvelopeQuery(envelope contracts.EvidenceEnvelope, r *http.Request) bool {
+	q := r.URL.Query()
+	if producer := strings.TrimSpace(q.Get("producer")); producer != "" && string(envelope.Producer.System) != producer {
+		return false
+	}
+	if domain := strings.TrimSpace(q.Get("authority_domain")); domain != "" && envelope.AuthorityDomain != domain {
+		return false
+	}
+	if kind := strings.TrimSpace(q.Get("subject_kind")); kind != "" && envelope.Subject.Kind != kind {
+		return false
+	}
+	if id := strings.TrimSpace(q.Get("subject_id")); id != "" && envelope.Subject.ID != id {
+		return false
+	}
+	if assertion := strings.TrimSpace(q.Get("assertion")); assertion != "" && envelope.Assertion != assertion {
+		return false
+	}
+	return true
+}
+
+func parseOptionalBool(value string) (*bool, error) {
+	value = strings.TrimSpace(value)
+	if value == "" {
+		return nil, nil
+	}
+	if value == "true" {
+		v := true
+		return &v, nil
+	}
+	if value == "false" {
+		v := false
+		return &v, nil
+	}
+	return nil, errors.New("boolean query parameter must be true or false")
 }
 
 func (s *Server) recoveryEvidenceList(w http.ResponseWriter, _ *http.Request) {
