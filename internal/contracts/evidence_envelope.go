@@ -79,11 +79,36 @@ var evidenceAuthorityDomains = map[EvidenceProducerID]map[string]bool{
 	EverkeepProducer:      {"resilience": true, "recovery": true, "preservation": true, "continuity": true},
 }
 
+var evidenceProducerContractPrefixes = map[EvidenceProducerID][]string{
+	MeshProducer:          {"contracts/mesh."},
+	WardveilProducer:      {"contracts/wardveil."},
+	PrivacyShieldProducer: {"contracts/privacy-shield."},
+	EverkeepProducer:      {"contracts/everkeep."},
+}
+
+var glazeEvidenceContracts = map[string]bool{
+	"CONFORMANCE.md":                    true,
+	"EVIDENCE_PRESENTATION.md":          true,
+	"tokens/enforcement.json":           true,
+	"tokens/evidence-presentation.json": true,
+}
+
 func NormalizeEvidenceEnvelope(v EvidenceEnvelope) (EvidenceEnvelope, error) {
 	return normalizeEvidenceEnvelopeAt(v, time.Now().UTC())
 }
 
 func normalizeEvidenceEnvelopeAt(v EvidenceEnvelope, evaluatedAt time.Time) (EvidenceEnvelope, error) {
+	return normalizeEvidenceEnvelope(v, evaluatedAt, true)
+}
+
+// normalizeStoredEvidenceEnvelope validates durable evidence without requiring
+// it to still be fresh. Expiration is a normal lifecycle state and must not
+// prevent Mesh from restarting or retaining historical provenance.
+func normalizeStoredEvidenceEnvelope(v EvidenceEnvelope, evaluatedAt time.Time) (EvidenceEnvelope, error) {
+	return normalizeEvidenceEnvelope(v, evaluatedAt, false)
+}
+
+func normalizeEvidenceEnvelope(v EvidenceEnvelope, evaluatedAt time.Time, requireFresh bool) (EvidenceEnvelope, error) {
 	v.Version = strings.TrimSpace(v.Version)
 	v.ID = strings.TrimSpace(v.ID)
 	v.Producer.Repository = strings.TrimSpace(v.Producer.Repository)
@@ -119,14 +144,23 @@ func normalizeEvidenceEnvelopeAt(v EvidenceEnvelope, evaluatedAt time.Time) (Evi
 	if v.Producer.Contract == "" {
 		return EvidenceEnvelope{}, errors.New("producer contract is required")
 	}
+	if !producerContractAllowed(v.Producer.System, v.Producer.Contract) {
+		return EvidenceEnvelope{}, errors.New("producer contract does not belong to the declared producer authority")
+	}
 	if !evidenceAuthorityDomains[v.Producer.System][v.AuthorityDomain] {
 		return EvidenceEnvelope{}, errors.New("authority domain is not valid for the declared producer")
 	}
 	if v.Subject.Kind == "" || v.Subject.ID == "" {
 		return EvidenceEnvelope{}, errors.New("evidence subject kind and id are required")
 	}
+	if len(v.Subject.Kind) > 64 || len(v.Subject.ID) > 256 || len(v.Subject.Scope) > 256 {
+		return EvidenceEnvelope{}, errors.New("evidence subject fields exceed maximum length")
+	}
 	if v.Assertion == "" || v.Outcome == "" || v.Source == "" {
 		return EvidenceEnvelope{}, errors.New("assertion, outcome, and source are required")
+	}
+	if len(v.Assertion) > 128 || len(v.Outcome) > 128 || len(v.Source) > 512 {
+		return EvidenceEnvelope{}, errors.New("assertion, outcome, or source exceeds maximum length")
 	}
 	if v.ObservedAt.IsZero() {
 		return EvidenceEnvelope{}, errors.New("observed_at is required")
@@ -142,7 +176,7 @@ func normalizeEvidenceEnvelopeAt(v EvidenceEnvelope, evaluatedAt time.Time) (Evi
 	if !v.ValidUntil.After(v.ObservedAt) {
 		return EvidenceEnvelope{}, errors.New("valid_until must be after observed_at")
 	}
-	if evaluatedAt.After(v.ValidUntil) {
+	if requireFresh && evaluatedAt.After(v.ValidUntil) {
 		return EvidenceEnvelope{}, errors.New("evidence envelope is expired")
 	}
 	if v.DataClass != EvidencePublic && v.DataClass != EvidenceOperational && v.DataClass != EvidenceDerived {
@@ -161,6 +195,18 @@ func normalizeEvidenceEnvelopeAt(v EvidenceEnvelope, evaluatedAt time.Time) (Evi
 		return EvidenceEnvelope{}, errors.New("payload_digest must use sha256:<64 lowercase hex characters>")
 	}
 	return v, nil
+}
+
+func producerContractAllowed(producer EvidenceProducerID, contract string) bool {
+	if producer == GlazeUIProducer {
+		return glazeEvidenceContracts[contract]
+	}
+	for _, prefix := range evidenceProducerContractPrefixes[producer] {
+		if strings.HasPrefix(contract, prefix) {
+			return true
+		}
+	}
+	return false
 }
 
 func (v EvidenceEnvelope) FreshAt(evaluatedAt time.Time) bool {
