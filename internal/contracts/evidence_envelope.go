@@ -44,21 +44,21 @@ type EvidenceEnvelopeSubject struct {
 }
 
 type EvidenceEnvelope struct {
-	Version               string                  `json:"version"`
-	ID                    string                  `json:"id"`
-	Producer              EvidenceEnvelopeProducer `json:"producer"`
-	AuthorityDomain       string                  `json:"authority_domain"`
-	Subject               EvidenceEnvelopeSubject `json:"subject"`
-	Assertion             string                  `json:"assertion"`
-	Outcome               string                  `json:"outcome"`
-	Source                string                  `json:"source"`
-	ObservedAt            time.Time               `json:"observed_at"`
-	ValidUntil            time.Time               `json:"valid_until"`
-	DataClass             EvidenceDataClass       `json:"data_class"`
-	Summary               string                  `json:"summary,omitempty"`
-	PayloadDigest         string                  `json:"payload_digest,omitempty"`
-	ContainsUserContent   bool                    `json:"contains_user_content"`
-	ContainsSecretMaterial bool                   `json:"contains_secret_material"`
+	Version                string                   `json:"version"`
+	ID                     string                   `json:"id"`
+	Producer               EvidenceEnvelopeProducer `json:"producer"`
+	AuthorityDomain        string                   `json:"authority_domain"`
+	Subject                EvidenceEnvelopeSubject  `json:"subject"`
+	Assertion              string                   `json:"assertion"`
+	Outcome                string                   `json:"outcome"`
+	Source                 string                   `json:"source"`
+	ObservedAt             time.Time                `json:"observed_at"`
+	ValidUntil             time.Time                `json:"valid_until"`
+	DataClass              EvidenceDataClass        `json:"data_class"`
+	Summary                string                   `json:"summary,omitempty"`
+	PayloadDigest          string                   `json:"payload_digest,omitempty"`
+	ContainsUserContent    bool                     `json:"contains_user_content"`
+	ContainsSecretMaterial bool                     `json:"contains_secret_material"`
 }
 
 var evidenceDigestPattern = regexp.MustCompile(`^sha256:[0-9a-f]{64}$`)
