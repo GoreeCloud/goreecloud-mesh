@@ -22,7 +22,7 @@ An envelope never transfers authority.
 
 A `wardveil-security` producer may assert only the `security` authority domain. A `privacy-shield` producer may assert only `privacy`. Everkeep may assert only its resilience/recovery/preservation/continuity domains. Glaze UI may assert only presentation or design-conformance. Mesh may assert only coordination or governance.
 
-Mesh must reject an envelope whose declared authority domain does not belong to its producer.
+Mesh rejects an envelope whose declared authority domain does not belong to its producer.
 
 ## Provenance rule
 
@@ -40,7 +40,9 @@ The envelope therefore makes source identity inspectable without treating source
 
 Every envelope requires both `observed_at` and producer-declared `valid_until` timestamps.
 
-Mesh does not invent a universal freshness duration. Evidence that is future-dated, expired, or whose validity window does not follow its observation time fails closed.
+Mesh does not invent a universal freshness duration. Evidence that is future-dated, expired at ingestion time, or whose validity window does not follow its observation time fails closed.
+
+After legitimate ingestion, an envelope may naturally become stale or expired. Mesh retains it for audit/provenance history while excluding it from current-evidence results. Normal expiry must not prevent Mesh from restarting.
 
 ## Data-minimization rule
 
@@ -62,19 +64,52 @@ A short summary is optional and capped at 512 characters. A `sha256:<digest>` ma
 
 For example, Everkeep may use a restore-verification assertion whose valid outcomes are defined by an Everkeep contract. Mesh may validate the envelope and make it discoverable, but it must not turn an Everkeep-specific outcome into a Wardveil security result, a Privacy Shield decision, or a Glaze UI semantic state.
 
+## Durable registry
+
+Mesh persists accepted envelopes in the `mesh.evidence-registry.v1` registry.
+
+Registry invariants:
+
+- evidence IDs are immutable;
+- an exact repeat of an existing envelope is idempotent;
+- an existing ID with different content is rejected;
+- state is written atomically with restrictive file permissions;
+- expired evidence remains retained and auditable;
+- current/stale evaluation is derived from producer-declared validity and never rewrites producer outcomes.
+
+## Authenticated runtime delivery
+
+`POST /v1/evidence/envelopes` requires a verified GoreeCloud Identity principal with `mesh.evidence.write`.
+
+The authenticated service ID must also exactly match the envelope's producer system. A generic write scope therefore cannot be used by one producer to submit another producer's evidence.
+
+A newly stored envelope returns HTTP `201`. An exact idempotent replay returns HTTP `200` with `replayed: true` and does not represent a new producer observation.
+
+See [`evidence-delivery.md`](evidence-delivery.md) for the complete source-level delivery boundary.
+
+## Authenticated consumer reads
+
+Evidence inspection routes require `mesh.evidence.read`.
+
+The consumer-oriented endpoint `GET /v1/evidence/subjects/{kind}/{id}` groups evidence by producer, authority domain, and assertion while exposing latest and latest-current observations separately. It deliberately does not calculate a combined domain verdict.
+
+This is the source contract consumed by the Glaze UI 1.6 Candidate Mesh evidence consumer.
+
 ## Consumer rule
 
 Consumers must evaluate both layers:
 
-1. the Mesh envelope is structurally valid, current, minimized, and correctly attributed; and
+1. the Mesh envelope is structurally valid, current where current evidence is required, minimized, and correctly attributed; and
 2. the producer-specific contract says the assertion/outcome is acceptable for the requested purpose.
 
 Passing layer 1 never substitutes for layer 2.
 
 ## Glaze UI presentation
 
-Glaze UI may render evidence freshness, producer identity, source visibility, unavailable state, and domain-specific status supplied by the producer. It must not infer protection, privacy compliance, recoverability, or conformance merely because an envelope exists.
+Glaze UI may render evidence freshness, producer identity, source visibility, unavailable state, and domain-specific status supplied by the producer. It must not infer protection, privacy compliance, recoverability, or conformance merely because an envelope exists or Mesh transport is available.
 
 ## Current implementation boundary
 
-The v1 implementation is a source-level contract and validator. It does not yet provide a durable envelope registry, HTTP API, signature verification, distributed revocation, cross-node replication, or production acceptance. Those remain separate milestones.
+The v1 source implementation now includes the envelope validator, durable immutable registry, atomic persistence, authenticated read/write API boundaries, producer-service identity binding, replay-aware delivery receipts, subject-oriented consumer views, and tested producer/Glaze reference clients.
+
+It does not by itself establish a deployed GoreeCloud Identity verifier, production Gateway/Network/TLS routing, distributed revocation, cross-node replication, target-environment producer delivery, product-specific adoption, or production/Stable acceptance. Those remain separate runtime milestones.
