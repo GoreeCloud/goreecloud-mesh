@@ -131,6 +131,55 @@ Supported states are `pending`, `validated`, and `blocked`. Unknown platform sys
 
 Returns the current fail-closed source-level Stable eligibility calculation together with the mandatory-system list and recorded evidence. This calculation is not production or Stable authorization.
 
+## Producer evidence envelopes
+
+The GoreeCloud Evidence Envelope v1 is a transport/provenance contract. It keeps domain truth owned by the producer while allowing Mesh to persist, query, and transport bounded evidence metadata. See [`evidence-envelopes.md`](evidence-envelopes.md).
+
+### `GET /v1/evidence/envelopes`
+
+Lists immutable evidence envelopes in newest-observation-first order. Each returned item includes a derived `fresh` boolean evaluated against the producer-declared `valid_until` boundary.
+
+Optional exact-match query filters:
+
+- `current=true|false` — include only currently fresh or stale/expired records.
+- `producer=<producer-id>` — for example `wardveil-security`, `privacy-shield`, `everkeep`, `glaze-ui`, or `goreecloud-mesh`.
+- `authority_domain=<domain>` — for example `security`, `privacy`, `recovery`, `presentation`, or `governance`.
+- `subject_kind=<kind>`
+- `subject_id=<id>`
+- `assertion=<assertion>`
+
+The response reports counts for the filtered result. `fresh: true` means only that the envelope is inside the producer-declared evidence validity window. It is not a positive domain verdict.
+
+### `POST /v1/evidence/envelopes`
+
+Records one producer-authored evidence envelope. Requires `mesh.evidence.write`.
+
+The request must satisfy `goreecloud.evidence-envelope.v1`, including:
+
+- a canonical producer system and repository;
+- an exact lowercase 40-character source revision;
+- a contract belonging to that producer;
+- an authority domain the producer actually owns;
+- a scoped subject;
+- assertion, outcome, source, observation time, and producer-declared validity window;
+- an allowed minimized data class (`public`, `operational`, or `derived`);
+- explicit `contains_user_content: false` and `contains_secret_material: false`;
+- an optional `sha256:<64 lowercase hex>` payload digest.
+
+Evidence IDs are immutable. Replaying the exact same envelope is idempotent. Reusing an existing ID with different content fails closed. Fresh evidence is required at write time; expired evidence cannot be inserted as new current evidence.
+
+### `GET /v1/evidence/envelopes/{id}`
+
+Returns one immutable envelope and its current derived `fresh` state, or `404` when unknown.
+
+Expired evidence remains readable after its validity window for audit/provenance purposes. Expiration does not delete history and does not prevent Mesh from restarting.
+
+### `GET /v1/evidence/status`
+
+Returns current/stale counts overall and by producer.
+
+This endpoint is evidence-transport and freshness status only. It must not be interpreted as a security, privacy, recovery, continuity, or design-conformance verdict.
+
 ## Everkeep recovery evidence
 
 ### `GET /v1/everkeep/recovery-evidence`
