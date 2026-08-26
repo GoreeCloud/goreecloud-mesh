@@ -17,18 +17,28 @@ type EvidenceEnvelopeRegistry struct {
 	envelopes map[string]EvidenceEnvelope
 }
 
+type EvidenceEnvelopeRecordResult struct {
+	Envelope EvidenceEnvelope
+	Replayed bool
+}
+
 func NewEvidenceEnvelopeRegistry() *EvidenceEnvelopeRegistry {
 	return &EvidenceEnvelopeRegistry{envelopes: map[string]EvidenceEnvelope{}}
 }
 
 func (r *EvidenceEnvelopeRegistry) Record(v EvidenceEnvelope) (EvidenceEnvelope, error) {
+	result, err := r.RecordWithResult(v)
+	return result.Envelope, err
+}
+
+func (r *EvidenceEnvelopeRegistry) RecordWithResult(v EvidenceEnvelope) (EvidenceEnvelopeRecordResult, error) {
 	return r.recordAt(v, time.Now().UTC())
 }
 
-func (r *EvidenceEnvelopeRegistry) recordAt(v EvidenceEnvelope, evaluatedAt time.Time) (EvidenceEnvelope, error) {
+func (r *EvidenceEnvelopeRegistry) recordAt(v EvidenceEnvelope, evaluatedAt time.Time) (EvidenceEnvelopeRecordResult, error) {
 	v, err := normalizeEvidenceEnvelopeAt(v, evaluatedAt)
 	if err != nil {
-		return EvidenceEnvelope{}, err
+		return EvidenceEnvelopeRecordResult{}, err
 	}
 
 	r.mu.Lock()
@@ -36,17 +46,17 @@ func (r *EvidenceEnvelopeRegistry) recordAt(v EvidenceEnvelope, evaluatedAt time
 
 	if existing, ok := r.envelopes[v.ID]; ok {
 		if reflect.DeepEqual(existing, v) {
-			return existing, nil
+			return EvidenceEnvelopeRecordResult{Envelope: existing, Replayed: true}, nil
 		}
-		return EvidenceEnvelope{}, errors.New("evidence envelope id is immutable and already exists with different content")
+		return EvidenceEnvelopeRecordResult{}, errors.New("evidence envelope id is immutable and already exists with different content")
 	}
 
 	r.envelopes[v.ID] = v
 	if err := r.persistLocked(); err != nil {
 		delete(r.envelopes, v.ID)
-		return EvidenceEnvelope{}, err
+		return EvidenceEnvelopeRecordResult{}, err
 	}
-	return v, nil
+	return EvidenceEnvelopeRecordResult{Envelope: v, Replayed: false}, nil
 }
 
 func (r *EvidenceEnvelopeRegistry) Get(id string) (EvidenceEnvelope, bool) {
