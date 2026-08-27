@@ -1,9 +1,6 @@
 package api
 
 import (
-	"encoding/json"
-	"net/http"
-	"net/http/httptest"
 	"testing"
 	"time"
 
@@ -11,56 +8,23 @@ import (
 )
 
 func TestPlatformEvidencePlaneSeparatesFreshnessFromDomainOutcome(t *testing.T) {
-	now := time.Now().UTC()
-	registry := contracts.NewEvidenceEnvelopeRegistry()
+	base := time.Date(2026, 8, 26, 20, 0, 0, 0, time.UTC)
+	evaluatedAt := base.Add(2 * time.Hour)
 
-	current := apiEnvelope(now)
+	current := apiEnvelope(base)
 	current.Subject = contracts.EvidenceEnvelopeSubject{Kind: "service", ID: "goreecloud-drive", Scope: "runtime"}
+	current.ObservedAt = base.Add(90 * time.Minute)
+	current.ValidUntil = base.Add(3 * time.Hour)
 	current.Outcome = "blocked"
-	if _, err := registry.Record(current); err != nil {
-		t.Fatal(err)
-	}
 
-	stale := everkeepAPIEnvelope(now)
+	stale := everkeepAPIEnvelope(base)
 	stale.ID = "everkeep-stale-evidence-001"
 	stale.Subject = current.Subject
-	stale.ObservedAt = now.Add(-2 * time.Hour)
-	stale.ValidUntil = now.Add(-time.Hour)
+	stale.ObservedAt = base
+	stale.ValidUntil = base.Add(time.Hour)
 	stale.Outcome = "pass"
-	if _, err := registry.Record(stale); err != nil {
-		t.Fatal(err)
-	}
 
-	h := evidenceAPIHandlerAs(t, "mesh-console", registry, ScopeEvidenceRead)
-	req := httptest.NewRequest(http.MethodGet, "/v1/evidence/subjects/service/goreecloud-drive?scope=runtime", nil)
-	res := httptest.NewRecorder()
-	h.ServeHTTP(res, req)
-	if res.Code != http.StatusOK {
-		t.Fatalf("status=%d body=%s", res.Code, res.Body.String())
-	}
-
-	var view struct {
-		Transport struct {
-			State        string `json:"state"`
-			CurrentCount int    `json:"current_count"`
-			StaleCount   int    `json:"stale_count"`
-		} `json:"transport"`
-		Authorities []struct {
-			Producer   string `json:"producer"`
-			Assertions []struct {
-				Latest struct {
-					Outcome string `json:"outcome"`
-					Fresh   bool   `json:"fresh"`
-				} `json:"latest"`
-				LatestCurrent *struct {
-					Outcome string `json:"outcome"`
-				} `json:"latest_current"`
-			} `json:"assertions"`
-		} `json:"authorities"`
-	}
-	if err := json.Unmarshal(res.Body.Bytes(), &view); err != nil {
-		t.Fatal(err)
-	}
+	view := buildEvidenceSubjectView([]contracts.EvidenceEnvelope{current, stale}, "service", "goreecloud-drive", "runtime", evaluatedAt)
 	if view.Transport.State != "available" || view.Transport.CurrentCount != 1 || view.Transport.StaleCount != 1 {
 		t.Fatalf("unexpected transport view: %#v", view.Transport)
 	}
