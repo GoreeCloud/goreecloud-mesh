@@ -1,0 +1,46 @@
+{
+  "schema_version": "1.0.0",
+  "contract": "goreecloud.platform-evidence-plane.v1",
+  "authority": "coordination-only",
+  "authority_transfer": false,
+  "runtime_acceptance_implied": false,
+  "stable_acceptance_implied": false,
+  "mesh_envelope": "contracts/mesh.evidence-envelope.schema.json",
+  "systems": [
+    {
+      "system": "wardveil-security",
+      "repository": "GoreeCloud/goreecloud-wardveil-security",
+      "profile": "contracts/wardveil.mesh-evidence-profile.json",
+      "authority_domains": ["security"]
+    },
+    {
+      "system": "privacy-shield",
+      "repository": "GoreeCloud/goreecloud-privacy-shield",
+      "profile": "contracts/privacy-shield.mesh-evidence-profile.json",
+      "authority_domains": ["privacy"]
+    },
+    {
+      "system": "everkeep",
+      "repository": "GoreeCloud/goreecloud-everkeep",
+      "profile": "contracts/everkeep.mesh-evidence-profile.json",
+      "authority_domains": ["resilience", "recovery", "preservation", "continuity"]
+    },
+    {
+      "system": "glaze-ui",
+      "repository": "GoreeCloud/glaze-ui",
+      "profile": "contracts/glaze.mesh-evidence-profile.json",
+      "authority_domains": ["presentation", "design-conformance"]
+    }
+  ],
+  "invariants": [
+    "Each producer remains authoritative only for its declared domain.",
+    "Mesh validates transport, provenance, freshness, minimization, and coordination metadata without creating producer-domain truth.",
+    "A structurally valid envelope never upgrades a producer outcome or implies Stable acceptance.",
+    "Expired evidence remains auditable but cannot satisfy a current-evidence view.",
+    "Raw user content, credentials, keys, tokens, and secret material are prohibited from platform evidence envelopes.",
+    "Glaze UI may present evidence but cannot manufacture security, privacy, recovery, continuity, or coordination claims.",
+    "Cross-domain summaries must preserve authority identity and must not collapse independent domains into a generic safe or protected verdict."
+  ],
+  "status": "development",
+  "production_acceptance": false
+}
