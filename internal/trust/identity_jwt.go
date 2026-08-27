@@ -1,6 +1,7 @@
 package trust
 
 import (
+	"crypto"
 	"crypto/rsa"
 	"crypto/sha256"
 	"encoding/base64"
@@ -116,7 +117,7 @@ func (v *IdentityJWTVerifier) Verify(r *http.Request) (Principal, error) {
 	if err != nil {
 		return Principal{}, errors.New("identity token signature is malformed")
 	}
-	if err := rsa.VerifyPKCS1v15(key, 0, digest[:], signature); err != nil {
+	if err := rsa.VerifyPKCS1v15(key, crypto.SHA256, digest[:], signature); err != nil {
 		return Principal{}, errors.New("identity token signature verification failed")
 	}
 
