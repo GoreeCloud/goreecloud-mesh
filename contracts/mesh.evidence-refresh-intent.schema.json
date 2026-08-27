@@ -1,0 +1,67 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://goreecloud.dev/contracts/mesh.evidence-refresh-intent.schema.json",
+  "title": "GoreeCloud Mesh Evidence Refresh Intent v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "id",
+    "coordinator",
+    "producer",
+    "authority_domain",
+    "subject",
+    "assertion",
+    "reason",
+    "requested_at",
+    "contains_user_content",
+    "contains_secret_material",
+    "authority_transferred",
+    "execution_authorized"
+  ],
+  "properties": {
+    "version": {"const": "goreecloud.evidence-refresh-intent.v1"},
+    "id": {"type": "string", "minLength": 1, "maxLength": 128},
+    "coordinator": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["system", "repository", "revision", "contract"],
+      "properties": {
+        "system": {"const": "goreecloud-mesh"},
+        "repository": {"const": "GoreeCloud/goreecloud-mesh"},
+        "revision": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+        "contract": {"const": "contracts/mesh.evidence-refresh-intent.schema.json"}
+      }
+    },
+    "producer": {"enum": ["glaze-ui", "wardveil-security", "privacy-shield", "everkeep"]},
+    "authority_domain": {"type": "string", "minLength": 1, "maxLength": 64},
+    "subject": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "id"],
+      "properties": {
+        "kind": {"type": "string", "minLength": 1, "maxLength": 64},
+        "id": {"type": "string", "minLength": 1, "maxLength": 256},
+        "scope": {"type": "string", "maxLength": 256}
+      }
+    },
+    "assertion": {"type": "string", "minLength": 1, "maxLength": 128},
+    "reason": {"enum": ["stale", "empty", "manual"]},
+    "requested_at": {"type": "string", "format": "date-time"},
+    "latest_observed_at": {"type": "string", "format": "date-time"},
+    "contains_user_content": {"const": false},
+    "contains_secret_material": {"const": false},
+    "authority_transferred": {"const": false},
+    "execution_authorized": {"const": false}
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"reason": {"const": "stale"}}},
+      "then": {"required": ["latest_observed_at"]}
+    },
+    {
+      "if": {"properties": {"reason": {"const": "empty"}}},
+      "then": {"not": {"required": ["latest_observed_at"]}}
+    }
+  ]
+}
