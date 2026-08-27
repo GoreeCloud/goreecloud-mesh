@@ -44,8 +44,20 @@ func TestRequireScopeRejectsInvalidPrincipal(t *testing.T) {
 	}
 }
 
+func TestRequireScopeRejectsUntrustedIssuer(t *testing.T) {
+	verifier := staticVerifier{principal: trust.Principal{ServiceID: "client", Issuer: "example-identity", Subject: "service:client", Scopes: []string{ScopeServicesWrite}}}
+	h := requireScope(verifier, ScopeServicesWrite, func(http.ResponseWriter, *http.Request) {
+		t.Fatal("handler must not run for principal from untrusted issuer")
+	})
+	response := httptest.NewRecorder()
+	h(response, httptest.NewRequest(http.MethodPost, "/v1/services", nil))
+	if response.Code != http.StatusUnauthorized {
+		t.Fatalf("status = %d body=%s", response.Code, response.Body.String())
+	}
+}
+
 func TestRequireScopeRejectsInsufficientScope(t *testing.T) {
-	verifier := staticVerifier{principal: trust.Principal{ServiceID: "client", Issuer: "goreecloud-identity", Subject: "service:client", Scopes: []string{ScopePolicyEvaluate}}}
+	verifier := staticVerifier{principal: trust.Principal{ServiceID: "client", Issuer: TrustedIdentityIssuer, Subject: "service:client", Scopes: []string{ScopePolicyEvaluate}}}
 	h := requireScope(verifier, ScopeServicesWrite, func(http.ResponseWriter, *http.Request) {
 		t.Fatal("handler must not run without required scope")
 	})
@@ -62,7 +74,7 @@ func TestRequireScopePropagatesVerifiedPrincipal(t *testing.T) {
 	h := requireScope(verifier, ScopeServicesWrite, func(w http.ResponseWriter, r *http.Request) {
 		called = true
 		principal, ok := trust.PrincipalFromContext(r.Context())
-		if !ok || principal.ServiceID != "client" || principal.Issuer != "goreecloud-identity" {
+		if !ok || principal.ServiceID != "client" || principal.Issuer != TrustedIdentityIssuer {
 			t.Fatalf("unexpected principal: %#v", principal)
 		}
 		w.WriteHeader(http.StatusNoContent)
