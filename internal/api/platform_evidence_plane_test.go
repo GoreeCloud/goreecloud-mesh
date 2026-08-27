@@ -25,7 +25,7 @@ func TestPlatformEvidencePlaneSeparatesFreshnessFromDomainOutcome(t *testing.T) 
 	stale.Outcome = "pass"
 
 	view := buildEvidenceSubjectView([]contracts.EvidenceEnvelope{current, stale}, "service", "goreecloud-drive", "runtime", evaluatedAt)
-	if view.Transport.State != "available" || view.Transport.CurrentCount != 1 || view.Transport.StaleCount != 1 {
+	if view.Transport.State != "current" || view.Transport.CurrentCount != 1 || view.Transport.StaleCount != 1 || view.Transport.RefreshRequired {
 		t.Fatalf("unexpected transport view: %#v", view.Transport)
 	}
 
