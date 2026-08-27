@@ -216,8 +216,9 @@ func TestEvidenceSubjectViewPreservesAuthorityBoundaries(t *testing.T) {
 	}
 	var view struct {
 		Transport struct {
-			State        string `json:"state"`
-			CurrentCount int    `json:"current_count"`
+			State           string `json:"state"`
+			CurrentCount    int    `json:"current_count"`
+			RefreshRequired bool   `json:"refresh_required"`
 		} `json:"transport"`
 		Authorities []struct {
 			Producer        string `json:"producer"`
@@ -227,7 +228,7 @@ func TestEvidenceSubjectViewPreservesAuthorityBoundaries(t *testing.T) {
 	if err := json.Unmarshal(response.Body.Bytes(), &view); err != nil {
 		t.Fatal(err)
 	}
-	if view.Transport.State != "available" || view.Transport.CurrentCount != 2 {
+	if view.Transport.State != "current" || view.Transport.CurrentCount != 2 || view.Transport.RefreshRequired {
 		t.Fatalf("unexpected transport view: %#v", view.Transport)
 	}
 	if len(view.Authorities) != 2 {
