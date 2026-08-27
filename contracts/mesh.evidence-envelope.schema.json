@@ -135,7 +135,7 @@
       "if": {"properties": {"producer": {"properties": {"system": {"const": "glaze-ui"}}}}},
       "then": {
         "properties": {
-          "producer": {"properties": {"repository": {"const": "GoreeCloud/glaze-ui"}}},
+          "producer": {"properties": {"repository": {"const": "GoreeCloud/goreecloud-glaze-ui"}}},
           "authority_domain": {"enum": ["presentation", "design-conformance"]}
         }
       }

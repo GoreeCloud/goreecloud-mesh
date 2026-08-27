@@ -1,0 +1,118 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://goreecloud.dev/contracts/mesh.evidence-refresh-response.schema.json",
+  "title": "GoreeCloud Mesh Evidence Refresh Response v1",
+  "description": "Bounded producer response to a canonical Mesh evidence refresh intent. A response reports handling state only. It never substitutes for producer evidence, makes stale evidence current, transfers authority, or authorizes execution.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "id",
+    "intent",
+    "producer",
+    "authority_domain",
+    "subject",
+    "assertion",
+    "status",
+    "responded_at",
+    "evidence_produced",
+    "contains_user_content",
+    "contains_secret_material",
+    "authority_transferred",
+    "execution_authorized"
+  ],
+  "properties": {
+    "version": {"const": "goreecloud.evidence-refresh-response.v1"},
+    "id": {"type": "string", "minLength": 1, "maxLength": 128},
+    "intent": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "coordinator_revision", "reason", "requested_at"],
+      "properties": {
+        "id": {"type": "string", "minLength": 1, "maxLength": 128},
+        "coordinator_revision": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+        "reason": {"enum": ["stale", "empty", "manual"]},
+        "requested_at": {"type": "string", "format": "date-time"}
+      }
+    },
+    "producer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["system", "repository", "revision"],
+      "properties": {
+        "system": {"enum": ["glaze-ui", "wardveil-security", "privacy-shield", "everkeep"]},
+        "repository": {"type": "string", "minLength": 1},
+        "revision": {"type": "string", "pattern": "^[0-9a-f]{40}$"}
+      }
+    },
+    "authority_domain": {
+      "enum": ["presentation", "design-conformance", "security", "privacy", "resilience", "recovery", "preservation", "continuity"]
+    },
+    "subject": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "id"],
+      "properties": {
+        "kind": {"type": "string", "minLength": 1, "maxLength": 64},
+        "id": {"type": "string", "minLength": 1, "maxLength": 256},
+        "scope": {"type": "string", "maxLength": 256}
+      }
+    },
+    "assertion": {"type": "string", "minLength": 1, "maxLength": 128},
+    "status": {"enum": ["received", "completed", "declined", "unavailable"]},
+    "reason_code": {"type": "string", "maxLength": 64},
+    "responded_at": {"type": "string", "format": "date-time"},
+    "evidence_produced": {"type": "boolean"},
+    "evidence_envelope_id": {"type": "string", "minLength": 1, "maxLength": 128},
+    "contains_user_content": {"const": false},
+    "contains_secret_material": {"const": false},
+    "authority_transferred": {"const": false},
+    "execution_authorized": {"const": false}
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"producer": {"properties": {"system": {"const": "glaze-ui"}}}}},
+      "then": {
+        "properties": {
+          "producer": {"properties": {"repository": {"const": "GoreeCloud/goreecloud-glaze-ui"}}},
+          "authority_domain": {"enum": ["presentation", "design-conformance"]}
+        }
+      }
+    },
+    {
+      "if": {"properties": {"producer": {"properties": {"system": {"const": "wardveil-security"}}}}},
+      "then": {
+        "properties": {
+          "producer": {"properties": {"repository": {"const": "GoreeCloud/goreecloud-wardveil-security"}}},
+          "authority_domain": {"const": "security"}
+        }
+      }
+    },
+    {
+      "if": {"properties": {"producer": {"properties": {"system": {"const": "privacy-shield"}}}}},
+      "then": {
+        "properties": {
+          "producer": {"properties": {"repository": {"const": "GoreeCloud/goreecloud-privacy-shield"}}},
+          "authority_domain": {"const": "privacy"}
+        }
+      }
+    },
+    {
+      "if": {"properties": {"producer": {"properties": {"system": {"const": "everkeep"}}}}},
+      "then": {
+        "properties": {
+          "producer": {"properties": {"repository": {"const": "GoreeCloud/goreecloud-everkeep"}}},
+          "authority_domain": {"enum": ["resilience", "recovery", "preservation", "continuity"]}
+        }
+      }
+    },
+    {
+      "if": {"properties": {"evidence_produced": {"const": true}}},
+      "then": {
+        "required": ["evidence_envelope_id"],
+        "properties": {"status": {"const": "completed"}}
+      },
+      "else": {"not": {"required": ["evidence_envelope_id"]}}
+    }
+  ]
+}
