@@ -1,8 +1,31 @@
 {
-  "schema_version": "1.0.0",
+  "schema_version": "1.1.0",
   "system": "goreecloud-mesh",
   "trusted_issuer": "goreecloud-identity",
-  "purpose": "Defines the minimum identity-verification boundary for authenticated GoreeCloud Mesh API access.",
+  "trusted_audience": "goreecloud-mesh",
+  "identity_profile": "goreecloud-identity.mesh-service-token.v1",
+  "identity_contract": {
+    "repository": "GoreeCloud/goreecloud-identity",
+    "path": "contracts/mesh-service-token.v1.json"
+  },
+  "verification_adapter": {
+    "implementation": "internal/trust/identity_jwt.go",
+    "runtime_configuration": "cmd/mesh/main.go",
+    "signature_algorithm": "RS256",
+    "key_source": "JWKS",
+    "kid_required": true,
+    "issuer_validation": true,
+    "audience_validation": true,
+    "expiry_validation": true,
+    "not_before_validation": true,
+    "issued_at_validation": true,
+    "maximum_token_lifetime_seconds": 900,
+    "clock_skew_seconds": 60,
+    "service_subject_binding": true,
+    "scope_extraction": "space-delimited scope claim",
+    "unknown_signing_key_refresh": true,
+    "fail_closed_without_runtime_configuration": true
+  },
   "principal_requirements": {
     "service_id_required": true,
     "issuer_required": true,
@@ -19,11 +42,14 @@
   "fail_closed_conditions": [
     "identity verifier unavailable",
     "credential verification fails",
+    "signature or signing key is invalid",
+    "issuer or audience is invalid",
+    "temporal claims are invalid",
+    "service subject does not match service_id",
     "principal is structurally invalid",
-    "issuer is not goreecloud-identity",
     "required scope is absent",
     "evidence producer does not match verified service identity"
   ],
-  "deployment_boundary": "This contract defines Mesh-side acceptance. It does not claim that a production GoreeCloud Identity token issuer or verifier adapter is deployed.",
+  "deployment_boundary": "The verifier adapter and token contract are implemented. Production acceptance still requires a deployed GoreeCloud Identity JWKS endpoint, issued service tokens, live key rotation evidence, and end-to-end delivery evidence.",
   "production_acceptance": false
 }
