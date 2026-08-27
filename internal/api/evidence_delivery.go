@@ -20,9 +20,10 @@ type evidenceDeliveryReceipt struct {
 }
 
 type evidenceTransportView struct {
-	State        string `json:"state"`
-	CurrentCount int    `json:"current_count"`
-	StaleCount   int    `json:"stale_count"`
+	State           string `json:"state"`
+	CurrentCount    int    `json:"current_count"`
+	StaleCount      int    `json:"stale_count"`
+	RefreshRequired bool   `json:"refresh_required"`
 }
 
 type evidenceAssertionView struct {
@@ -43,6 +44,17 @@ type evidenceSubjectView struct {
 	Transport   evidenceTransportView             `json:"transport"`
 	Authorities []evidenceAuthorityView           `json:"authorities"`
 	Note        string                            `json:"note"`
+}
+
+func evidenceTransportLifecycle(current, stale int) (state string, refreshRequired bool) {
+	switch {
+	case current > 0:
+		return "current", false
+	case stale > 0:
+		return "stale-only", true
+	default:
+		return "empty", true
+	}
 }
 
 func validateEvidenceProducerPrincipal(r *http.Request, envelope contracts.EvidenceEnvelope) (trust.Principal, error) {
@@ -154,14 +166,16 @@ func buildEvidenceSubjectView(envelopes []contracts.EvidenceEnvelope, kind, id, 
 		return authorities[i].Producer < authorities[j].Producer
 	})
 
+	transportState, refreshRequired := evidenceTransportLifecycle(current, stale)
 	return evidenceSubjectView{
 		Subject: contracts.EvidenceEnvelopeSubject{Kind: kind, ID: id, Scope: resolvedScope},
 		Transport: evidenceTransportView{
-			State:        "available",
-			CurrentCount: current,
-			StaleCount:   stale,
+			State:           transportState,
+			CurrentCount:    current,
+			StaleCount:      stale,
+			RefreshRequired: refreshRequired,
 		},
 		Authorities: authorities,
-		Note:        "Mesh preserves producer outcomes by authority. This view does not combine security, privacy, recovery, continuity, or design-conformance evidence into a single verdict.",
+		Note:        "Mesh preserves producer outcomes by authority. Current, stale-only, and empty are evidence lifecycle states only and do not combine security, privacy, recovery, continuity, or design-conformance evidence into a single verdict.",
 	}
 }
