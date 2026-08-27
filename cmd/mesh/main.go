@@ -15,6 +15,7 @@ import (
 	"github.com/GoreeCloud/goreecloud-mesh/internal/governance"
 	"github.com/GoreeCloud/goreecloud-mesh/internal/mesh"
 	"github.com/GoreeCloud/goreecloud-mesh/internal/store"
+	"github.com/GoreeCloud/goreecloud-mesh/internal/trust"
 )
 
 func main() {
@@ -24,6 +25,9 @@ func main() {
 	runtimeEvidencePath := flag.String("runtime-evidence", "./mesh-runtime-evidence.json", "durable runtime contract evidence path; empty disables persistence")
 	evidenceEnvelopePath := flag.String("evidence-envelopes", "./mesh-evidence-envelopes.json", "durable producer-authoritative evidence envelope path; empty disables persistence")
 	recoveryEvidencePath := flag.String("everkeep-recovery-evidence", "./mesh-everkeep-recovery-evidence.json", "durable Everkeep recovery evidence path; empty disables persistence")
+	identityJWKSURL := flag.String("identity-jwks-url", "", "GoreeCloud Identity JWKS endpoint; empty keeps authenticated APIs fail-closed")
+	identityIssuer := flag.String("identity-issuer", trust.DefaultIdentityIssuer, "required GoreeCloud Identity token issuer")
+	identityAudience := flag.String("identity-audience", trust.DefaultIdentityAudience, "required GoreeCloud Identity token audience")
 	flag.Parse()
 
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo}))
@@ -57,7 +61,18 @@ func main() {
 		os.Exit(1)
 	}
 
-	handler := meshapi.NewAuthorizedWithRecoveryAndEvidence(mesh.New(state), contractRegistry, attestationRegistry, recoveryRegistry, evidenceEnvelopeRegistry, nil, logger)
+	var verifier trust.Verifier
+	if *identityJWKSURL != "" {
+		identityVerifier := trust.NewIdentityJWTVerifier(*identityJWKSURL)
+		identityVerifier.Issuer = *identityIssuer
+		identityVerifier.Audience = *identityAudience
+		verifier = identityVerifier
+		logger.Info("GoreeCloud Identity verifier configured", "issuer", *identityIssuer, "audience", *identityAudience, "jwks_url", *identityJWKSURL)
+	} else {
+		logger.Warn("GoreeCloud Identity verifier is not configured; authenticated Mesh APIs will fail closed")
+	}
+
+	handler := meshapi.NewAuthorizedWithRecoveryAndEvidence(mesh.New(state), contractRegistry, attestationRegistry, recoveryRegistry, evidenceEnvelopeRegistry, verifier, logger)
 	server := &http.Server{
 		Addr:              *listen,
 		Handler:           handler,
