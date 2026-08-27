@@ -61,14 +61,14 @@ func TestNormalizeEvidenceRefreshHandoffRejectsUnboundEvidence(t *testing.T) {
 	response := refreshResponse(requestedAt)
 
 	cases := map[string]func(*EvidenceEnvelope){
-		"wrong envelope id": func(v *EvidenceEnvelope) { v.ID = "wardveil-evidence-other" },
-		"wrong producer revision": func(v *EvidenceEnvelope) { v.Producer.Revision = strings.Repeat("c", 40) },
-		"wrong authority domain": func(v *EvidenceEnvelope) { v.AuthorityDomain = "privacy" },
-		"wrong subject": func(v *EvidenceEnvelope) { v.Subject.ID = "another-service" },
-		"wrong assertion": func(v *EvidenceEnvelope) { v.Assertion = "different-status" },
-		"pre-request observation": func(v *EvidenceEnvelope) { v.ObservedAt = requestedAt.Add(-time.Second) },
+		"wrong envelope id":         func(v *EvidenceEnvelope) { v.ID = "wardveil-evidence-other" },
+		"wrong producer revision":   func(v *EvidenceEnvelope) { v.Producer.Revision = strings.Repeat("c", 40) },
+		"wrong authority domain":    func(v *EvidenceEnvelope) { v.AuthorityDomain = "privacy" },
+		"wrong subject":             func(v *EvidenceEnvelope) { v.Subject.ID = "another-service" },
+		"wrong assertion":           func(v *EvidenceEnvelope) { v.Assertion = "different-status" },
+		"pre-request observation":   func(v *EvidenceEnvelope) { v.ObservedAt = requestedAt.Add(-time.Second) },
 		"post-response observation": func(v *EvidenceEnvelope) { v.ObservedAt = response.RespondedAt.Add(time.Second) },
-		"expired evidence": func(v *EvidenceEnvelope) { v.ValidUntil = evaluatedAt.Add(-time.Second) },
+		"expired evidence":          func(v *EvidenceEnvelope) { v.ValidUntil = evaluatedAt.Add(-time.Second) },
 	}
 
 	for name, mutate := range cases {
