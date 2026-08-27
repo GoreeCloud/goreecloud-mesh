@@ -1,11 +1,18 @@
 {
-  "schema_version": "1.0.0",
+  "schema_version": "1.1.0",
   "contract": "goreecloud.platform-evidence-plane.v1",
   "authority": "coordination-only",
   "authority_transfer": false,
   "runtime_acceptance_implied": false,
   "stable_acceptance_implied": false,
   "mesh_envelope": "contracts/mesh.evidence-envelope.schema.json",
+  "producer_delivery_transport": {
+    "https_required_except_loopback": true,
+    "redirects_permitted_with_service_identity": false,
+    "base_url_user_information_permitted": false,
+    "base_url_query_or_fragment_permitted": false,
+    "reason": "Producer service identity proofs must be bound to the configured Mesh endpoint and must never be forwarded to a redirect target."
+  },
   "systems": [
     {
       "system": "wardveil-security",
@@ -38,6 +45,8 @@
     "A structurally valid envelope never upgrades a producer outcome or implies Stable acceptance.",
     "Expired evidence remains auditable but cannot satisfy a current-evidence view.",
     "Raw user content, credentials, keys, tokens, and secret material are prohibited from platform evidence envelopes.",
+    "Producer delivery clients must reject redirects while carrying GoreeCloud Identity service proofs.",
+    "Producer delivery endpoints must not contain embedded user information, query, or fragment components.",
     "Glaze UI may present evidence but cannot manufacture security, privacy, recovery, continuity, or coordination claims.",
     "Cross-domain summaries must preserve authority identity and must not collapse independent domains into a generic safe or protected verdict."
   ],
