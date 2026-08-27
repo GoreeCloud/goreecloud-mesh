@@ -9,11 +9,11 @@ import (
 
 func TestEvidenceTransportLifecycle(t *testing.T) {
 	cases := []struct {
-		name            string
-		current         int
-		stale           int
-		wantState       string
-		wantRefresh     bool
+		name        string
+		current     int
+		stale       int
+		wantState   string
+		wantRefresh bool
 	}{
 		{name: "current evidence wins", current: 2, stale: 3, wantState: "current", wantRefresh: false},
 		{name: "stale history only", current: 0, stale: 2, wantState: "stale-only", wantRefresh: true},
