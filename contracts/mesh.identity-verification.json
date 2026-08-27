@@ -1,0 +1,29 @@
+{
+  "schema_version": "1.0.0",
+  "system": "goreecloud-mesh",
+  "trusted_issuer": "goreecloud-identity",
+  "purpose": "Defines the minimum identity-verification boundary for authenticated GoreeCloud Mesh API access.",
+  "principal_requirements": {
+    "service_id_required": true,
+    "issuer_required": true,
+    "subject_required_for_evidence_producers": true,
+    "issuer_must_equal": "goreecloud-identity",
+    "required_scope_must_be_present": true
+  },
+  "evidence_delivery_requirements": {
+    "producer_service_id_must_equal_envelope_producer": true,
+    "write_scope": "mesh.evidence.write",
+    "read_scope": "mesh.evidence.read",
+    "cross_producer_impersonation": "reject"
+  },
+  "fail_closed_conditions": [
+    "identity verifier unavailable",
+    "credential verification fails",
+    "principal is structurally invalid",
+    "issuer is not goreecloud-identity",
+    "required scope is absent",
+    "evidence producer does not match verified service identity"
+  ],
+  "deployment_boundary": "This contract defines Mesh-side acceptance. It does not claim that a production GoreeCloud Identity token issuer or verifier adapter is deployed.",
+  "production_acceptance": false
+}
