@@ -46,7 +46,7 @@ func TestPlatformEvidencePlaneSeparatesFreshnessFromDomainOutcome(t *testing.T) 
 			StaleCount   int    `json:"stale_count"`
 		} `json:"transport"`
 		Authorities []struct {
-			Producer string `json:"producer"`
+			Producer   string `json:"producer"`
 			Assertions []struct {
 				Latest struct {
 					Outcome string `json:"outcome"`
