@@ -1,5 +1,5 @@
 {
-  "schema_version": "1.1.0",
+  "schema_version": "1.2.0",
   "system": "goreecloud-mesh",
   "trusted_issuer": "goreecloud-identity",
   "trusted_audience": "goreecloud-mesh",
@@ -7,6 +7,16 @@
   "identity_contract": {
     "repository": "GoreeCloud/goreecloud-identity",
     "path": "contracts/mesh-service-token.v1.json"
+  },
+  "identity_issuer": {
+    "repository": "GoreeCloud/goreecloud-identity",
+    "implementation": "authentik/goreecloud/mesh_service_token.py",
+    "tests": "tests/goreecloud/test_mesh_service_token.py",
+    "runtime_issuer_implemented": true,
+    "jwks_generation_implemented": true,
+    "private_key_storage_integrated": false,
+    "jwks_endpoint_deployed": false,
+    "live_service_issuance_deployed": false
   },
   "verification_adapter": {
     "implementation": "internal/trust/identity_jwt.go",
@@ -50,6 +60,6 @@
     "required scope is absent",
     "evidence producer does not match verified service identity"
   ],
-  "deployment_boundary": "The verifier adapter and token contract are implemented. Production acceptance still requires a deployed GoreeCloud Identity JWKS endpoint, issued service tokens, live key rotation evidence, and end-to-end delivery evidence.",
+  "deployment_boundary": "The GoreeCloud Identity token issuer/JWKS generator and Mesh verifier are implemented. Production acceptance still requires Identity-managed durable private-key storage, a deployed JWKS endpoint, deployed service-token issuance, live key-rotation evidence, and end-to-end producer delivery evidence.",
   "production_acceptance": false
 }
