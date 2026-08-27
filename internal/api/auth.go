@@ -3,6 +3,7 @@ package api
 import (
 	"errors"
 	"net/http"
+	"strings"
 
 	"github.com/GoreeCloud/goreecloud-mesh/internal/trust"
 )
@@ -16,6 +17,8 @@ const (
 	ScopeEvidenceRead       = "mesh.evidence.read"
 	ScopeEvidenceWrite      = "mesh.evidence.write"
 	ScopeRecoveryWrite      = "mesh.everkeep.recovery.write"
+
+	TrustedIdentityIssuer = "goreecloud-identity"
 )
 
 func requireScope(verifier trust.Verifier, scope string, next http.HandlerFunc) http.HandlerFunc {
@@ -31,6 +34,10 @@ func requireScope(verifier trust.Verifier, scope string, next http.HandlerFunc) 
 		}
 		if err := trust.Validate(principal); err != nil {
 			writeError(w, http.StatusUnauthorized, err)
+			return
+		}
+		if strings.TrimSpace(principal.Issuer) != TrustedIdentityIssuer {
+			writeError(w, http.StatusUnauthorized, errors.New("untrusted identity issuer"))
 			return
 		}
 		if !trust.HasScope(principal, scope) {
