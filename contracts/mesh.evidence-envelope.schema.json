@@ -37,6 +37,7 @@
         "system": {
           "enum": [
             "goreecloud-mesh",
+            "goreecloud-identity",
             "glaze-ui",
             "wardveil-security",
             "privacy-shield",
@@ -61,6 +62,14 @@
       "enum": [
         "coordination",
         "governance",
+        "identity",
+        "authentication",
+        "authorization",
+        "accounts",
+        "devices",
+        "credentials",
+        "sessions",
+        "delegated-authority",
         "presentation",
         "design-conformance",
         "security",
@@ -128,6 +137,26 @@
         "properties": {
           "producer": {"properties": {"repository": {"const": "GoreeCloud/goreecloud-mesh"}}},
           "authority_domain": {"enum": ["coordination", "governance"]}
+        }
+      }
+    },
+    {
+      "if": {"properties": {"producer": {"properties": {"system": {"const": "goreecloud-identity"}}}}},
+      "then": {
+        "properties": {
+          "producer": {"properties": {"repository": {"const": "GoreeCloud/goreecloud-identity"}}},
+          "authority_domain": {
+            "enum": [
+              "identity",
+              "authentication",
+              "authorization",
+              "accounts",
+              "devices",
+              "credentials",
+              "sessions",
+              "delegated-authority"
+            ]
+          }
         }
       }
     },
