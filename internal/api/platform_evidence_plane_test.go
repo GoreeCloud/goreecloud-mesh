@@ -80,10 +80,10 @@ func TestPlatformEvidencePlaneRegistersIntegralProducerAuthorities(t *testing.T)
 	}
 
 	expected := map[string]string{
-		"wardveil-security":  "GoreeCloud/goreecloud-wardveil-security",
-		"privacy-shield":     "GoreeCloud/goreecloud-privacy-shield",
-		"everkeep":           "GoreeCloud/goreecloud-everkeep",
-		"glaze-ui":           "GoreeCloud/goreecloud-glaze-ui",
+		"wardveil-security":   "GoreeCloud/goreecloud-wardveil-security",
+		"privacy-shield":      "GoreeCloud/goreecloud-privacy-shield",
+		"everkeep":            "GoreeCloud/goreecloud-everkeep",
+		"glaze-ui":            "GoreeCloud/goreecloud-glaze-ui",
 		"goreecloud-identity": "GoreeCloud/goreecloud-identity",
 	}
 	if len(plane.Systems) != len(expected) {
