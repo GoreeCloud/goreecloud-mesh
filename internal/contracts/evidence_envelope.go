@@ -16,6 +16,7 @@ type EvidenceProducerID string
 
 const (
 	MeshProducer          EvidenceProducerID = "goreecloud-mesh"
+	IdentityProducer      EvidenceProducerID = "goreecloud-identity"
 	GlazeUIProducer       EvidenceProducerID = "glaze-ui"
 	WardveilProducer      EvidenceProducerID = "wardveil-security"
 	PrivacyShieldProducer EvidenceProducerID = "privacy-shield"
@@ -65,6 +66,7 @@ var evidenceDigestPattern = regexp.MustCompile(`^sha256:[0-9a-f]{64}$`)
 
 var evidenceProducerRepositories = map[EvidenceProducerID]string{
 	MeshProducer:          "GoreeCloud/goreecloud-mesh",
+	IdentityProducer:      "GoreeCloud/goreecloud-identity",
 	GlazeUIProducer:       "GoreeCloud/goreecloud-glaze-ui",
 	WardveilProducer:      "GoreeCloud/goreecloud-wardveil-security",
 	PrivacyShieldProducer: "GoreeCloud/goreecloud-privacy-shield",
@@ -73,6 +75,7 @@ var evidenceProducerRepositories = map[EvidenceProducerID]string{
 
 var evidenceAuthorityDomains = map[EvidenceProducerID]map[string]bool{
 	MeshProducer:          {"coordination": true, "governance": true},
+	IdentityProducer:      {"identity": true, "authentication": true, "authorization": true, "accounts": true, "devices": true, "credentials": true, "sessions": true, "delegated-authority": true},
 	GlazeUIProducer:       {"presentation": true, "design-conformance": true},
 	WardveilProducer:      {"security": true},
 	PrivacyShieldProducer: {"privacy": true},
@@ -81,6 +84,7 @@ var evidenceAuthorityDomains = map[EvidenceProducerID]map[string]bool{
 
 var evidenceProducerContractPrefixes = map[EvidenceProducerID][]string{
 	MeshProducer:          {"contracts/mesh."},
+	IdentityProducer:      {"contracts/identity."},
 	WardveilProducer:      {"contracts/wardveil."},
 	PrivacyShieldProducer: {"contracts/privacy-shield."},
 	EverkeepProducer:      {"contracts/everkeep."},
