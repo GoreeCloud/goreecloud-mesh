@@ -49,6 +49,37 @@ func TestNormalizeEvidenceEnvelopeAcceptsCanonicalProducerEvidence(t *testing.T)
 	}
 }
 
+func TestNormalizeEvidenceEnvelopeAcceptsIdentityAuthorityWithoutCrossDomainEscalation(t *testing.T) {
+	now := time.Date(2026, time.August, 29, 12, 30, 0, 0, time.UTC)
+	v := validEnvelope(now)
+	v.ID = "identity-authentication-result-001"
+	v.Producer = EvidenceEnvelopeProducer{
+		System:     IdentityProducer,
+		Repository: "GoreeCloud/goreecloud-identity",
+		Revision:   strings.Repeat("d", 40),
+		Contract:   "contracts/identity.mesh-evidence-profile.json",
+	}
+	v.AuthorityDomain = "authentication"
+	v.Subject = EvidenceEnvelopeSubject{Kind: "service", ID: "goreecloud-drive", Scope: "mesh-delivery"}
+	v.Assertion = "authentication-result"
+	v.Outcome = "verified"
+	v.Source = "identity://evidence/authentication-result-001"
+	v.Summary = "Minimized Identity authentication evidence; no reusable credential or session secret is transported."
+
+	got, err := normalizeEvidenceEnvelopeAt(v, now)
+	if err != nil {
+		t.Fatalf("expected bounded Identity evidence to be valid: %v", err)
+	}
+	if got.Producer.System != IdentityProducer || got.AuthorityDomain != "authentication" {
+		t.Fatalf("unexpected Identity evidence envelope: %#v", got)
+	}
+
+	v.AuthorityDomain = "security"
+	if _, err := normalizeEvidenceEnvelopeAt(v, now); err == nil {
+		t.Fatal("expected Identity producer to be unable to assert Wardveil security authority")
+	}
+}
+
 func TestNormalizeEvidenceEnvelopeRejectsRepositoryMismatch(t *testing.T) {
 	now := time.Date(2026, time.August, 26, 22, 30, 0, 0, time.UTC)
 	v := validEnvelope(now)
