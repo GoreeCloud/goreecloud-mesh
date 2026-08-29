@@ -57,7 +57,7 @@ func TestNormalizeEvidenceEnvelopeAcceptsIdentityAuthorityWithoutCrossDomainEsca
 		System:     IdentityProducer,
 		Repository: "GoreeCloud/goreecloud-identity",
 		Revision:   strings.Repeat("d", 40),
-		Contract:   "contracts/identity.mesh-evidence-profile.json",
+		Contract:   "contracts/identity.evidence.schema.json",
 	}
 	v.AuthorityDomain = "authentication"
 	v.Subject = EvidenceEnvelopeSubject{Kind: "service", ID: "goreecloud-drive", Scope: "mesh-delivery"}
