@@ -2,7 +2,7 @@
 
 This contract defines the runtime delivery boundary for `goreecloud.evidence-envelope.v1` after an authoritative producer has already created a minimized envelope.
 
-It does not move security, privacy, recovery, continuity, presentation, or design-conformance authority into GoreeCloud Mesh.
+It does not move identity, authentication, authorization, account, device, credential, session, security, privacy, recovery, continuity, presentation, or design-conformance authority into GoreeCloud Mesh.
 
 ## Identity boundary
 
@@ -17,6 +17,8 @@ A protected request must resolve to a valid service principal with:
 
 Mesh does not mint producer credentials.
 
+Authentication proves the service principal and its granted Mesh scope. It does not prove the producer-domain assertion carried by an envelope, including when the producer is GoreeCloud Identity itself.
+
 ## Producer write scope
 
 `POST /v1/evidence/envelopes` requires `mesh.evidence.write`.
@@ -25,13 +27,14 @@ Scope possession alone is not sufficient. The authenticated `service_id` must ex
 
 | Envelope producer | Required authenticated service ID |
 | --- | --- |
+| `goreecloud-identity` | `goreecloud-identity` |
 | `wardveil-security` | `wardveil-security` |
 | `privacy-shield` | `privacy-shield` |
 | `everkeep` | `everkeep` |
 | `glaze-ui` | `glaze-ui` |
 | `goreecloud-mesh` | `goreecloud-mesh` |
 
-A scoped Privacy Shield principal therefore cannot submit a Wardveil envelope, and a scoped Wardveil principal cannot submit Everkeep recovery evidence.
+A scoped Privacy Shield principal therefore cannot submit a Wardveil envelope, a scoped Wardveil principal cannot submit Everkeep recovery evidence, and a scoped GoreeCloud Identity principal cannot use Identity authentication to submit evidence under another producer's authority.
 
 This identity binding is separate from envelope validation. Both must pass.
 
@@ -62,7 +65,7 @@ New evidence must be current at ingestion time according to its producer-declare
 
 Expired evidence remains durable and inspectable after it was legitimately accepted. Historical expiration does not prevent Mesh restart.
 
-Freshness remains timing metadata only. `fresh: true` does not mean protected, private, recoverable, compliant, healthy, or conformant.
+Freshness remains timing metadata only. `fresh: true` does not mean authenticated, authorized, protected, private, recoverable, compliant, healthy, or conformant.
 
 ## Consumer subject view
 
@@ -75,9 +78,9 @@ The view:
 - groups each producer's evidence by assertion;
 - exposes the latest observation and latest currently valid observation separately;
 - preserves the producer's outcome vocabulary verbatim;
-- never calculates an overall security, privacy, recovery, continuity, or conformance verdict.
+- never calculates an overall identity, authentication, authorization, security, privacy, recovery, continuity, or conformance verdict.
 
-A successful Everkeep restore verification may therefore appear alongside a Wardveil security finding without one cancelling or upgrading the other.
+A successful Everkeep restore verification may therefore appear alongside a Wardveil security finding and a GoreeCloud Identity authentication result without one cancelling or upgrading the others.
 
 ## Credential handling in producer clients
 
@@ -89,7 +92,10 @@ Those clients:
 - do not copy it into the evidence envelope;
 - do not return it in the delivery receipt;
 - do not persist it;
-- reject non-loopback plaintext HTTP destinations.
+- reject non-loopback plaintext HTTP destinations;
+- reject redirects while carrying the credential.
+
+GoreeCloud Identity is now a recognized bounded evidence producer in the Mesh schema and validator, but an Identity-owned runtime delivery client is not yet implemented. The producer profile therefore continues to record Identity delivery implementation and production acceptance as false.
 
 Credential issuance, renewal, revocation, audience policy, and production token verification remain GoreeCloud Identity responsibilities.
 
@@ -101,4 +107,4 @@ This source contract does not claim that a public or private production Mesh end
 
 ## Production acceptance boundary
 
-This milestone establishes source-level authenticated delivery enforcement and tested producer/consumer clients. Production acceptance still requires the deployed Mesh runtime to be configured with a real GoreeCloud Identity verifier and the intended Gateway/Network/TLS controls, followed by runtime evidence that producer identities, scopes, replay behavior, and consumer reads work in the target environment.
+This milestone establishes source-level authenticated delivery enforcement, producer identity binding, bounded Identity producer acceptance in the envelope validator, and tested producer/consumer clients where implemented. Production acceptance still requires the deployed Mesh runtime to be configured with a real GoreeCloud Identity verifier and the intended Gateway/Network/TLS controls, followed by runtime evidence that producer identities, scopes, replay behavior, and consumer reads work in the target environment. Identity evidence delivery additionally requires an Identity-owned delivery implementation and its own target-environment acceptance.
