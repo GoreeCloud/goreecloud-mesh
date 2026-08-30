@@ -1,0 +1,40 @@
+name: Validate Mesh Center website
+
+on:
+  pull_request:
+    paths:
+      - 'website/**'
+      - 'scripts/build_public_site.py'
+      - 'scripts/validate_public_site.py'
+      - '.github/workflows/validate-website.yml'
+      - 'WEBSITE.md'
+      - 'BRANDING.md'
+  push:
+    branches: [main]
+    paths:
+      - 'website/**'
+      - 'scripts/build_public_site.py'
+      - 'scripts/validate_public_site.py'
+      - '.github/workflows/validate-website.yml'
+      - 'WEBSITE.md'
+      - 'BRANDING.md'
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check out exact source revision
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Set up Python
+        uses: actions/setup-python@e797f83bcb11b83ae66e0230d6156d7c80228e7c
+        with:
+          python-version: '3.13'
+      - name: Compile website tools
+        run: python -m py_compile scripts/build_public_site.py scripts/validate_public_site.py
+      - name: Validate isolated public website
+        run: python scripts/validate_public_site.py

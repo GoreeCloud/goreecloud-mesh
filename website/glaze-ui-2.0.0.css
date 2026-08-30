@@ -1,0 +1,5 @@
+/* GoreeCloud Glaze UI 2.0.0 public web integration layer. */
+.glaze-canvas{min-height:100vh}
+.glaze-material{isolation:isolate}
+@supports(padding:max(0px)){body{padding-left:env(safe-area-inset-left);padding-right:env(safe-area-inset-right)}.topbar{padding-top:max(12px,env(safe-area-inset-top))}.footer{padding-bottom:max(56px,env(safe-area-inset-bottom))}}
+@media(hover:hover){a,.button,.theme-toggle{transition:transform .18s ease,background-color .18s ease,border-color .18s ease,box-shadow .18s ease}.button:hover{transform:translateY(-1px)}}
