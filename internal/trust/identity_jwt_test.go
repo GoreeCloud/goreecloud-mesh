@@ -10,6 +10,7 @@ import (
 	"math/big"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 )
@@ -90,15 +91,91 @@ func TestIdentityJWTVerifierRejectsServiceSubjectMismatch(t *testing.T) {
 	}
 }
 
+func TestIdentityJWTVerifierRejectsUnsafeJWKSSources(t *testing.T) {
+	for name, raw := range map[string]string{
+		"plain-http": "http://identity.example/.well-known/jwks.json",
+		"credentials": "https://user:secret@identity.example/.well-known/jwks.json",
+		"query":       "https://identity.example/.well-known/jwks.json?source=other",
+		"fragment":    "https://identity.example/.well-known/jwks.json#other",
+	} {
+		t.Run(name, func(t *testing.T) {
+			verifier := NewIdentityJWTVerifier(raw)
+			if err := verifier.refreshKeysLocked(); err == nil {
+				t.Fatal("expected unsafe JWKS source rejection")
+			}
+		})
+	}
+}
+
+func TestIdentityJWTVerifierRefusesJWKSSourceRedirect(t *testing.T) {
+	privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
+	if err != nil {
+		t.Fatal(err)
+	}
+	target := jwksServer(t, &privateKey.PublicKey, "kid-target")
+	defer target.Close()
+	redirect := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, target.URL, http.StatusFound)
+	}))
+	defer redirect.Close()
+
+	verifier := NewIdentityJWTVerifier(redirect.URL)
+	err = verifier.refreshKeysLocked()
+	if err == nil || !strings.Contains(err.Error(), "HTTP 302") {
+		t.Fatalf("expected redirect refusal, got %v", err)
+	}
+}
+
+func TestIdentityJWKSRejectsWeakAndDuplicateKeys(t *testing.T) {
+	weak, err := rsa.GenerateKey(rand.Reader, 1024)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := rsaKey(
+		base64.RawURLEncoding.EncodeToString(weak.PublicKey.N.Bytes()),
+		base64.RawURLEncoding.EncodeToString(big.NewInt(int64(weak.PublicKey.E)).Bytes()),
+	); err == nil {
+		t.Fatal("expected weak Identity RSA key rejection")
+	}
+
+	strong, err := rsa.GenerateKey(rand.Reader, 2048)
+	if err != nil {
+		t.Fatal(err)
+	}
+	item := jwkMap(&strong.PublicKey, "duplicate-kid")
+	server := jwksDocumentServer(t, []map[string]any{item, item})
+	defer server.Close()
+	verifier := NewIdentityJWTVerifier(server.URL)
+	if err := verifier.refreshKeysLocked(); err == nil || !strings.Contains(err.Error(), "duplicate") {
+		t.Fatalf("expected duplicate kid rejection, got %v", err)
+	}
+}
+
 func jwksServer(t *testing.T, publicKey *rsa.PublicKey, kid string) *httptest.Server {
 	t.Helper()
+	return jwksDocumentServer(t, []map[string]any{jwkMap(publicKey, kid)})
+}
+
+func jwksDocumentServer(t *testing.T, keys []map[string]any) *httptest.Server {
+	t.Helper()
+	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{"keys": keys})
+	}))
+}
+
+func jwkMap(publicKey *rsa.PublicKey, kid string) map[string]any {
 	n := base64.RawURLEncoding.EncodeToString(publicKey.N.Bytes())
 	e := big.NewInt(int64(publicKey.E)).Bytes()
 	eEncoded := base64.RawURLEncoding.EncodeToString(e)
-	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode(map[string]any{"keys": []map[string]any{{"kty": "RSA", "use": "sig", "alg": "RS256", "kid": kid, "n": n, "e": eEncoded}}})
-	}))
+	return map[string]any{
+		"kty": "RSA",
+		"use": "sig",
+		"alg": "RS256",
+		"kid": kid,
+		"n":   n,
+		"e":   eEncoded,
+	}
 }
 
 func signToken(t *testing.T, key *rsa.PrivateKey, kid string, claims map[string]any) string {
