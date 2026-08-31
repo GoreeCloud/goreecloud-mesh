@@ -15,12 +15,14 @@ import (
 	"time"
 )
 
+const testIdentityKID = "mesh-kid-1"
+
 func TestIdentityJWTVerifierAcceptsValidServiceToken(t *testing.T) {
 	privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
 	if err != nil {
 		t.Fatal(err)
 	}
-	server := jwksServer(t, &privateKey.PublicKey, "kid-1")
+	server := jwksServer(t, &privateKey.PublicKey, testIdentityKID)
 	defer server.Close()
 	now := time.Date(2026, 8, 26, 20, 0, 0, 0, time.UTC)
 	verifier := NewIdentityJWTVerifier(server.URL)
@@ -31,7 +33,7 @@ func TestIdentityJWTVerifierAcceptsValidServiceToken(t *testing.T) {
 		"scope": "mesh.evidence.write mesh.evidence.read", "iat": now.Unix(),
 		"nbf": now.Add(-time.Second).Unix(), "exp": now.Add(10 * time.Minute).Unix(), "jti": "token-001",
 	}
-	token := signToken(t, privateKey, "kid-1", claims)
+	token := signToken(t, privateKey, testIdentityKID, claims)
 	req := httptest.NewRequest(http.MethodPost, "/v1/evidence/envelopes", nil)
 	req.Header.Set("Authorization", "Bearer "+token)
 	principal, err := verifier.Verify(req)
@@ -48,7 +50,7 @@ func TestIdentityJWTVerifierRejectsWrongAudienceAndLongLifetime(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	server := jwksServer(t, &privateKey.PublicKey, "kid-1")
+	server := jwksServer(t, &privateKey.PublicKey, testIdentityKID)
 	defer server.Close()
 	now := time.Now().UTC().Truncate(time.Second)
 	verifier := NewIdentityJWTVerifier(server.URL)
@@ -65,7 +67,7 @@ func TestIdentityJWTVerifierRejectsWrongAudienceAndLongLifetime(t *testing.T) {
 			}
 			mutate(claims)
 			req := httptest.NewRequest(http.MethodGet, "/", nil)
-			req.Header.Set("Authorization", "Bearer "+signToken(t, privateKey, "kid-1", claims))
+			req.Header.Set("Authorization", "Bearer "+signToken(t, privateKey, testIdentityKID, claims))
 			if _, err := verifier.Verify(req); err == nil {
 				t.Fatal("expected verification failure")
 			}
@@ -78,16 +80,34 @@ func TestIdentityJWTVerifierRejectsServiceSubjectMismatch(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	server := jwksServer(t, &privateKey.PublicKey, "kid-1")
+	server := jwksServer(t, &privateKey.PublicKey, testIdentityKID)
 	defer server.Close()
 	now := time.Now().UTC().Truncate(time.Second)
 	verifier := NewIdentityJWTVerifier(server.URL)
 	verifier.Now = func() time.Time { return now }
 	claims := map[string]any{"iss": "goreecloud-identity", "aud": "goreecloud-mesh", "sub": "service:privacy-shield", "service_id": "wardveil-security", "scope": "mesh.evidence.write", "iat": now.Unix(), "exp": now.Add(5 * time.Minute).Unix(), "jti": "t2"}
 	req := httptest.NewRequest(http.MethodGet, "/", nil)
-	req.Header.Set("Authorization", "Bearer "+signToken(t, privateKey, "kid-1", claims))
+	req.Header.Set("Authorization", "Bearer "+signToken(t, privateKey, testIdentityKID, claims))
 	if _, err := verifier.Verify(req); err == nil {
 		t.Fatal("expected subject/service mismatch rejection")
+	}
+}
+
+func TestIdentityJWTVerifierRejectsInvalidTokenKID(t *testing.T) {
+	privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
+	if err != nil {
+		t.Fatal(err)
+	}
+	server := jwksServer(t, &privateKey.PublicKey, testIdentityKID)
+	defer server.Close()
+	now := time.Now().UTC().Truncate(time.Second)
+	claims := map[string]any{"iss": "goreecloud-identity", "aud": "goreecloud-mesh", "sub": "service:everkeep", "service_id": "everkeep", "scope": "mesh.evidence.write", "iat": now.Unix(), "exp": now.Add(5 * time.Minute).Unix(), "jti": "t-kid"}
+	for _, kid := range []string{"short", "invalid kid", strings.Repeat("a", 129)} {
+		req := httptest.NewRequest(http.MethodGet, "/", nil)
+		req.Header.Set("Authorization", "Bearer "+signToken(t, privateKey, kid, claims))
+		if _, err := NewIdentityJWTVerifier(server.URL).Verify(req); err == nil || !strings.Contains(err.Error(), "kid is invalid") {
+			t.Fatalf("expected invalid kid rejection for %q, got %v", kid, err)
+		}
 	}
 }
 
@@ -126,7 +146,19 @@ func TestIdentityJWTVerifierRefusesJWKSSourceRedirect(t *testing.T) {
 	}
 }
 
-func TestIdentityJWKSRejectsWeakAndDuplicateKeys(t *testing.T) {
+func TestIdentityJWKSRejectsNonJSONResponse(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/plain")
+		_, _ = w.Write([]byte(`{"keys":[]}`))
+	}))
+	defer server.Close()
+	verifier := NewIdentityJWTVerifier(server.URL)
+	if err := verifier.refreshKeysLocked(); err == nil || !strings.Contains(err.Error(), "application/json") {
+		t.Fatalf("expected non-JSON JWKS rejection, got %v", err)
+	}
+}
+
+func TestIdentityJWKSRejectsWeakDuplicateInvalidKIDAndEvenExponentKeys(t *testing.T) {
 	weak, err := rsa.GenerateKey(rand.Reader, 1024)
 	if err != nil {
 		t.Fatal(err)
@@ -148,6 +180,21 @@ func TestIdentityJWKSRejectsWeakAndDuplicateKeys(t *testing.T) {
 	verifier := NewIdentityJWTVerifier(server.URL)
 	if err := verifier.refreshKeysLocked(); err == nil || !strings.Contains(err.Error(), "duplicate") {
 		t.Fatalf("expected duplicate kid rejection, got %v", err)
+	}
+
+	invalidKID := jwkMap(&strong.PublicKey, "short")
+	invalidServer := jwksDocumentServer(t, []map[string]any{invalidKID})
+	defer invalidServer.Close()
+	if err := NewIdentityJWTVerifier(invalidServer.URL).refreshKeysLocked(); err == nil || !strings.Contains(err.Error(), "no usable") {
+		t.Fatalf("expected invalid JWKS kid rejection, got %v", err)
+	}
+
+	evenExponent := base64.RawURLEncoding.EncodeToString(big.NewInt(4).Bytes())
+	if _, err := rsaKey(
+		base64.RawURLEncoding.EncodeToString(strong.PublicKey.N.Bytes()),
+		evenExponent,
+	); err == nil {
+		t.Fatal("expected even RSA exponent rejection")
 	}
 }
 
