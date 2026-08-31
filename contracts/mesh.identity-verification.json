@@ -10,7 +10,10 @@
   },
   "identity_issuer": {
     "repository": "GoreeCloud/goreecloud-identity",
-    "implementation": "authentik/goreecloud/mesh_service_token.py",
+    "implementation": "goreecloud_identity/mesh_service_token.py",
+    "native_authority": true,
+    "transitional_authentik_compatibility_module": "authentik/goreecloud/mesh_service_token.py",
+    "transitional_jwks_view": "authentik/goreecloud/mesh_service_token_views.py",
     "tests": "tests/goreecloud/test_mesh_service_token.py",
     "runtime_issuer_implemented": true,
     "jwks_generation_implemented": true,
@@ -77,6 +80,6 @@
     "required scope is absent",
     "evidence producer does not match verified service identity"
   ],
-  "deployment_boundary": "The GoreeCloud Identity token issuer/JWKS generator and Mesh verifier are implemented, and Mesh now contains a source-controlled live acceptance command. Production acceptance still requires Identity-managed durable private-key storage, a deployed JWKS endpoint, deployed service-token issuance, execution of the live acceptance command with a genuine Identity-issued credential, live key-rotation evidence, and end-to-end producer delivery evidence.",
+  "deployment_boundary": "The native GoreeCloud Identity token issuer/JWKS authority and Mesh verifier are implemented, and Mesh contains a source-controlled live acceptance command. The current Authentik surface is transitional compatibility/integration only. Production acceptance still requires Identity-managed durable private-key storage, a deployed approved JWKS endpoint, deployed service-token issuance, execution of the live acceptance command with a genuine Identity-issued credential, live key-rotation evidence, and end-to-end producer delivery evidence.",
   "production_acceptance": false
 }
