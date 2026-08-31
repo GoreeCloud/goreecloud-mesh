@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"goreecloud-mesh/internal/trust"
+	"github.com/GoreeCloud/goreecloud-mesh/internal/trust"
 )
 
 func TestExactRevision(t *testing.T) {
