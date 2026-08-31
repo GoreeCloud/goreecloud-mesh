@@ -70,7 +70,7 @@ func TestWriteEvidenceIsPrivateAndDoesNotContainCredential(t *testing.T) {
 	path := filepath.Join(dir, "evidence.json")
 	credential := "header.payload.signature"
 	value := evidence{
-		Component:                       acceptanceComponent,
+		Component:                      acceptanceComponent,
 		MeshRevision:                   strings.Repeat("a", 40),
 		IdentityRevision:               strings.Repeat("b", 40),
 		CredentialInEvidence:           false,
