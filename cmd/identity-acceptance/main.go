@@ -14,7 +14,7 @@ import (
 	"strings"
 	"time"
 
-	"goreecloud-mesh/internal/trust"
+	"github.com/GoreeCloud/goreecloud-mesh/internal/trust"
 )
 
 const (
