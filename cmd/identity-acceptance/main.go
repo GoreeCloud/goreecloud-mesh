@@ -35,29 +35,29 @@ func (s *scopeFlags) Set(value string) error {
 }
 
 type evidence struct {
-	Component                           string   `json:"component"`
-	ObservedAt                          string   `json:"observed_at"`
-	MeshRevision                        string   `json:"mesh_revision"`
-	IdentityRevision                    string   `json:"identity_revision"`
-	JWKSURL                             string   `json:"jwks_url"`
-	ExpectedIssuer                      string   `json:"expected_issuer"`
-	ExpectedAudience                    string   `json:"expected_audience"`
-	ExpectedServiceID                   string   `json:"expected_service_id"`
-	RequiredScopes                      []string `json:"required_scopes"`
-	VerifiedServiceID                   string   `json:"verified_service_id"`
-	VerifiedSubject                     string   `json:"verified_subject"`
-	VerifiedScopes                      []string `json:"verified_scopes"`
-	CredentialSHA256                    string   `json:"credential_sha256"`
-	DeployedJWKSAndSignatureVerification string  `json:"deployed_jwks_and_signature_verification"`
-	IssuerAudienceValidation            string   `json:"issuer_audience_validation"`
-	ServiceSubjectBinding               string   `json:"service_subject_binding"`
-	RequiredScopeValidation             string   `json:"required_scope_validation"`
-	UnauthenticatedRequestRejection     string   `json:"unauthenticated_request_rejection"`
-	CredentialInEvidence                bool     `json:"credential_in_evidence"`
-	PrivateKeyMaterialInEvidence        bool     `json:"private_key_material_in_evidence"`
-	LiveIdentityVerifierAcceptance      string   `json:"live_identity_verifier_acceptance"`
-	IdentityProductionAcceptance        string   `json:"identity_production_acceptance"`
-	MeshProductionAcceptance            string   `json:"mesh_production_acceptance"`
+	Component                            string   `json:"component"`
+	ObservedAt                           string   `json:"observed_at"`
+	MeshRevision                         string   `json:"mesh_revision"`
+	IdentityRevision                     string   `json:"identity_revision"`
+	JWKSURL                              string   `json:"jwks_url"`
+	ExpectedIssuer                       string   `json:"expected_issuer"`
+	ExpectedAudience                     string   `json:"expected_audience"`
+	ExpectedServiceID                    string   `json:"expected_service_id"`
+	RequiredScopes                       []string `json:"required_scopes"`
+	VerifiedServiceID                    string   `json:"verified_service_id"`
+	VerifiedSubject                      string   `json:"verified_subject"`
+	VerifiedScopes                       []string `json:"verified_scopes"`
+	CredentialSHA256                     string   `json:"credential_sha256"`
+	DeployedJWKSAndSignatureVerification string   `json:"deployed_jwks_and_signature_verification"`
+	IssuerAudienceValidation             string   `json:"issuer_audience_validation"`
+	ServiceSubjectBinding                string   `json:"service_subject_binding"`
+	RequiredScopeValidation              string   `json:"required_scope_validation"`
+	UnauthenticatedRequestRejection      string   `json:"unauthenticated_request_rejection"`
+	CredentialInEvidence                 bool     `json:"credential_in_evidence"`
+	PrivateKeyMaterialInEvidence         bool     `json:"private_key_material_in_evidence"`
+	LiveIdentityVerifierAcceptance       string   `json:"live_identity_verifier_acceptance"`
+	IdentityProductionAcceptance         string   `json:"identity_production_acceptance"`
+	MeshProductionAcceptance             string   `json:"mesh_production_acceptance"`
 }
 
 func exactRevision(value, name string) (string, error) {
