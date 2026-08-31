@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"io"
 	"math/big"
+	"mime"
 	"net"
 	"net/http"
 	"net/url"
@@ -22,6 +23,8 @@ const (
 	DefaultIdentityIssuer   = "goreecloud-identity"
 	DefaultIdentityAudience = "goreecloud-mesh"
 	minimumIdentityRSABytes = 256
+	minimumIdentityKIDBytes = 8
+	maximumIdentityKIDBytes = 128
 )
 
 type IdentityJWTVerifier struct {
@@ -103,8 +106,8 @@ func (v *IdentityJWTVerifier) Verify(r *http.Request) (Principal, error) {
 	if header.Alg != "RS256" {
 		return Principal{}, errors.New("identity token must use RS256")
 	}
-	if strings.TrimSpace(header.Kid) == "" {
-		return Principal{}, errors.New("identity token kid is required")
+	if !validIdentityKeyID(header.Kid) {
+		return Principal{}, errors.New("identity token kid is invalid")
 	}
 
 	key, err := v.keyFor(header.Kid, false)
@@ -319,6 +322,10 @@ func (v *IdentityJWTVerifier) refreshKeysLocked() error {
 	if resp.StatusCode != http.StatusOK {
 		return fmt.Errorf("identity JWKS retrieval returned HTTP %d", resp.StatusCode)
 	}
+	mediaType, _, err := mime.ParseMediaType(resp.Header.Get("Content-Type"))
+	if err != nil || mediaType != "application/json" {
+		return errors.New("identity JWKS response must use application/json")
+	}
 	body, err := io.ReadAll(io.LimitReader(resp.Body, 1<<20))
 	if err != nil {
 		return errors.New("identity JWKS response could not be read")
@@ -329,7 +336,7 @@ func (v *IdentityJWTVerifier) refreshKeysLocked() error {
 	}
 	keys := make(map[string]*rsa.PublicKey)
 	for _, item := range doc.Keys {
-		if item.KTY != "RSA" || strings.TrimSpace(item.Kid) == "" || item.N == "" || item.E == "" {
+		if item.KTY != "RSA" || !validIdentityKeyID(item.Kid) || item.N == "" || item.E == "" {
 			continue
 		}
 		if item.Alg != "" && item.Alg != "RS256" {
@@ -381,6 +388,22 @@ func isLoopbackHostname(host string) bool {
 	return ip != nil && ip.IsLoopback()
 }
 
+func validIdentityKeyID(kid string) bool {
+	if len(kid) < minimumIdentityKIDBytes || len(kid) > maximumIdentityKIDBytes {
+		return false
+	}
+	for _, char := range kid {
+		if (char >= 'A' && char <= 'Z') ||
+			(char >= 'a' && char <= 'z') ||
+			(char >= '0' && char <= '9') ||
+			char == '.' || char == '_' || char == '-' {
+			continue
+		}
+		return false
+	}
+	return true
+}
+
 func rsaKey(nEncoded, eEncoded string) (*rsa.PublicKey, error) {
 	nBytes, err := base64.RawURLEncoding.DecodeString(nEncoded)
 	if err != nil || len(nBytes) < minimumIdentityRSABytes {
@@ -394,7 +417,7 @@ func rsaKey(nEncoded, eEncoded string) (*rsa.PublicKey, error) {
 	for _, b := range eBytes {
 		e = e<<8 | int(b)
 	}
-	if e < 3 {
+	if e < 3 || e%2 == 0 {
 		return nil, errors.New("invalid RSA exponent")
 	}
 	key := &rsa.PublicKey{N: new(big.Int).SetBytes(nBytes), E: e}
