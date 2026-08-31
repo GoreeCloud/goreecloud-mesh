@@ -93,7 +93,7 @@ func TestIdentityJWTVerifierRejectsServiceSubjectMismatch(t *testing.T) {
 
 func TestIdentityJWTVerifierRejectsUnsafeJWKSSources(t *testing.T) {
 	for name, raw := range map[string]string{
-		"plain-http": "http://identity.example/.well-known/jwks.json",
+		"plain-http":  "http://identity.example/.well-known/jwks.json",
 		"credentials": "https://user:secret@identity.example/.well-known/jwks.json",
 		"query":       "https://identity.example/.well-known/jwks.json?source=other",
 		"fragment":    "https://identity.example/.well-known/jwks.json#other",
