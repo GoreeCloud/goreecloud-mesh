@@ -25,7 +25,10 @@
     "implementation": "internal/trust/identity_jwt.go",
     "runtime_configuration": "cmd/mesh/main.go",
     "signature_algorithm": "RS256",
-    "key_source": "JWKS",
+    "protected_header_type_required": "JWT",
+    "unsupported_critical_headers_rejected": true,
+    "alternate_or_embedded_key_source_headers_rejected": ["jku", "jwk", "x5u", "x5c"],
+    "key_source": "configured GoreeCloud Identity JWKS only",
     "kid_required": true,
     "issuer_validation": true,
     "audience_validation": true,
@@ -73,6 +76,9 @@
     "identity verifier unavailable",
     "credential verification fails",
     "signature or signing key is invalid",
+    "protected header type is missing or is not JWT",
+    "unsupported critical protected headers are present",
+    "credential attempts to select or embed an alternate verification key source",
     "issuer or audience is invalid",
     "temporal claims are invalid",
     "service subject does not match service_id",
@@ -80,6 +86,6 @@
     "required scope is absent",
     "evidence producer does not match verified service identity"
   ],
-  "deployment_boundary": "The native GoreeCloud Identity token issuer/JWKS authority and Mesh verifier are implemented, and Mesh contains a source-controlled live acceptance command. The current Authentik surface is transitional compatibility/integration only. Production acceptance still requires Identity-managed durable private-key storage, a deployed approved JWKS endpoint, deployed service-token issuance, execution of the live acceptance command with a genuine Identity-issued credential, live key-rotation evidence, and end-to-end producer delivery evidence.",
+  "deployment_boundary": "The native GoreeCloud Identity token issuer/JWKS authority and Mesh verifier are implemented, and Mesh contains a source-controlled live acceptance command. Mesh now fails closed on ambiguous protected-header profiles and does not honor token-selected or embedded key sources. The current Authentik surface is transitional compatibility/integration only. Production acceptance still requires Identity-managed durable private-key storage, a deployed approved JWKS endpoint, deployed service-token issuance, execution of the live acceptance command with a genuine Identity-issued credential, live key-rotation evidence, and end-to-end producer delivery evidence.",
   "production_acceptance": false
 }
