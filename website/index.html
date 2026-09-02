@@ -1,108 +1,42 @@
 <!doctype html>
-<html lang="en" data-theme="system">
+<html lang="en" data-theme="system" data-glaze-version="2.2.0" data-glaze-clarity="balanced" data-glaze-expression="balanced">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-  <meta name="color-scheme" content="light dark">
-  <meta name="description" content="GoreeCloud Mesh Center — the coordination and governance surface for GoreeCloud applications, services, capabilities, relationships, events, and platform evidence.">
-  <meta name="goreecloud-glaze-ui" content="2.0.0">
-  <title>Mesh Center — GoreeCloud</title>
-  <link rel="icon" href="/assets/goreecloud-mesh-mark.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="/glaze-ui-2.0.0.css" data-glaze-ui="2.0.0">
-  <link rel="stylesheet" href="/style.css">
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="color-scheme" content="light dark">
+  <meta name="description" content="GoreeCloud Mesh is the coordination and governance plane for explicit platform relationships, policy-aware capability use, lifecycle events, and dependency context without authority transfer.">
+  <meta name="goreecloud-glaze-ui" content="2.2.0"><meta name="robots" content="index,follow">
+  <link rel="canonical" href="https://mesh.goreecloud.com/"><link rel="icon" href="/assets/goreecloud-mesh-mark.svg" type="image/svg+xml">
+  <title>GoreeCloud Mesh — Coordination without authority transfer</title>
+  <link rel="stylesheet" href="/assets/glaze.css">
+  <link rel="stylesheet" href="/assets/glaze.controls.css">
+  <link rel="stylesheet" href="/assets/glaze.expressive.css">
+  <link rel="stylesheet" href="/assets/glaze.formfactors.css">
+  <link rel="stylesheet" href="/assets/glaze.accessibility.css">
+  <link rel="stylesheet" href="/assets/glaze.color.css">
+  <link rel="stylesheet" href="/assets/glaze.motion.css">
+  <link rel="stylesheet" href="/assets/glaze.materials.css">
+  <link rel="stylesheet" href="/assets/glaze.layout.css">
+  <link rel="stylesheet" href="/assets/glaze.states.css">
+  <link rel="stylesheet" href="/assets/glaze.workspace.candidate.css">
+  <link rel="stylesheet" href="/assets/glaze-2.candidate.css">
+  <link rel="stylesheet" href="/assets/glaze-2.foldable.candidate.css">
+  <link rel="stylesheet" href="/assets/glaze-2.emerging.candidate.css">
+  <link rel="stylesheet" href="/assets/glaze-2.2.0.css">
+  <link rel="stylesheet" href="/assets/site.css">
 </head>
-<body class="glaze-canvas">
-  <a class="skip-link" href="#main">Skip to content</a>
-  <header class="topbar">
-    <div class="shell topbar-inner">
-      <a class="brand" href="#top" aria-label="Mesh Center home">
-        <img src="/assets/goreecloud-mesh-mark.svg" width="42" height="42" alt="">
-        <span><strong>GoreeCloud Mesh</strong><small>Mesh Center · Weave</small></span>
-      </a>
-      <nav aria-label="Primary">
-        <a href="#capabilities">Capabilities</a>
-        <a href="#boundaries">Boundaries</a>
-        <a href="#status">Status</a>
-        <a href="https://github.com/GoreeCloud/goreecloud-mesh">Source</a>
-      </nav>
-      <button class="theme-toggle" type="button" data-theme-toggle aria-label="Change appearance">Appearance</button>
-    </div>
-  </header>
-
-  <main id="main">
-    <section class="hero shell" id="top">
-      <div class="hero-copy">
-        <p class="eyebrow">GoreeCloud Integral Platform System</p>
-        <h1>Coordinate the platform.<br>Keep authority distributed.</h1>
-        <p class="lede">GoreeCloud Mesh is the native coordination and governance plane that models applications, services, capabilities, dependencies, relationships, lifecycle events, and evidence without taking ownership of another system’s authority.</p>
-        <div class="hero-actions">
-          <a class="button primary" href="#capabilities">Explore Mesh</a>
-          <a class="button" href="https://github.com/GoreeCloud/goreecloud-mesh">View source</a>
-        </div>
-        <p class="truth-note">Development source and CI evidence exist for the current native foundation. Production adapters, authenticated production access, Mesh Center runtime acceptance, and Stable qualification remain pending.</p>
-      </div>
-      <aside class="hero-panel glaze-material" aria-label="Current Mesh status">
-        <img class="hero-mark" src="/assets/goreecloud-mesh-mark.svg" width="128" height="128" alt="GoreeCloud Mesh Weave mark">
-        <div class="status-line"><span class="status-dot"></span><strong>Development</strong></div>
-        <dl>
-          <div><dt>Role</dt><dd>Coordination + governance</dd></div>
-          <div><dt>API</dt><dd>Private-first /v1 foundation</dd></div>
-          <div><dt>Evidence plane</dt><dd>Coordination-only</dd></div>
-          <div><dt>Stable</dt><dd>Not yet qualified</dd></div>
-        </dl>
-      </aside>
-    </section>
-
-    <section class="section shell" id="capabilities" aria-labelledby="capabilities-title">
-      <div class="section-heading">
-        <p class="eyebrow">Platform coordination</p>
-        <h2 id="capabilities-title">A shared map of how GoreeCloud fits together.</h2>
-        <p>Mesh provides explicit platform relationships instead of hidden coupling. Discovery never grants authorization by itself, and coordination never becomes silent ownership.</p>
-      </div>
-      <div class="card-grid">
-        <article class="cap-card"><span>01</span><h3>Registry</h3><p>Tracks approved service identities, kinds, versions, capabilities, dependencies, state, labels, and conformance metadata.</p></article>
-        <article class="cap-card"><span>02</span><h3>Graph</h3><p>Models explicit service relationships and computes direct and transitive dependency impact.</p></article>
-        <article class="cap-card"><span>03</span><h3>Policy</h3><p>Fails closed when actors, targets, capabilities, availability, or enabled relationships do not satisfy the registered contract.</p></article>
-        <article class="cap-card"><span>04</span><h3>Events</h3><p>Publishes bounded relationship and lifecycle events while keeping application payloads outside the coordination plane.</p></article>
-        <article class="cap-card"><span>05</span><h3>Evidence plane</h3><p>Coordinates producer-owned evidence from Integral Platform Systems while preserving authority_transfer=false.</p></article>
-        <article class="cap-card"><span>06</span><h3>Impact context</h3><p>Combines declared dependencies with approved health and enforcement observations to explain operational impact.</p></article>
-      </div>
-    </section>
-
-    <section class="section shell" id="boundaries" aria-labelledby="boundaries-title">
-      <div class="section-heading compact">
-        <p class="eyebrow">Authority boundaries</p>
-        <h2 id="boundaries-title">Mesh coordinates. Specialized systems remain authoritative.</h2>
-      </div>
-      <div class="boundary-grid">
-        <article><h3>GoreeCloud Identity</h3><p>Identity, authentication, authorization, accounts, devices, credentials, sessions, and delegated authority.</p></article>
-        <article><h3>Wardveil Security</h3><p>Protection, detection, trust, verification, response, and security evidence.</p></article>
-        <article><h3>Privacy Shield</h3><p>Privacy, consent, minimization, governance, retention boundaries, and user control.</p></article>
-        <article><h3>Everkeep</h3><p>Resilience, backup, recovery, preservation, portability, succession, and continuity.</p></article>
-        <article><h3>Glaze UI</h3><p>Interface design, interaction, accessibility, responsiveness, and design-system governance.</p></article>
-        <article><h3>Gateway / Network / Monitoring</h3><p>Traffic enforcement, connectivity, and health evidence remain owned by their respective operational systems.</p></article>
-      </div>
-    </section>
-
-    <section class="section shell status-section" id="status" aria-labelledby="status-title">
-      <div class="status-panel glaze-material">
-        <div>
-          <p class="eyebrow">Current implementation boundary</p>
-          <h2 id="status-title">Native foundation accepted in source. Production acceptance is separate.</h2>
-        </div>
-        <div class="status-columns">
-          <div><h3>Present in the repository</h3><ul><li>Native Go Registry, Graph, Policy, and Events foundation</li><li>Atomic local state persistence and private-first API</li><li>Runtime platform-contract evidence registry</li><li>Identity trust and Monitoring/Gateway/Network observation contracts</li><li>Privacy Shield and Everkeep governance contracts</li><li>Identity producer evidence-envelope authority validation</li></ul></div>
-          <div><h3>Still required before Stable</h3><ul><li>Production Identity verifier and authenticated service access</li><li>Production Monitoring, Gateway, and Network adapters</li><li>Runtime Glaze UI, Wardveil, Privacy Shield, and Everkeep acceptance</li><li>Durable external event delivery and compatibility work</li><li>Production deployment, recovery, rollback, and failure-mode evidence</li><li>Explicit production approval for an exact revision</li></ul></div>
-        </div>
-        <p class="baseline">Website truth baseline: GoreeCloud Mesh main through <code>a4945c5bccd84d23b1b0f54334d85939073920a8</code>.</p>
-      </div>
-    </section>
-  </main>
-
-  <footer class="footer shell">
-    <div><strong>GoreeCloud Mesh</strong><span>Mesh Center · coordination without authority transfer</span></div>
-    <nav aria-label="Footer"><a href="https://www.goreecloud.com/">GoreeCloud</a><a href="https://projects.goreecloud.com/">Projects</a><a href="https://github.com/GoreeCloud/goreecloud-mesh">GitHub</a></nav>
-  </footer>
-  <script src="/app.js" defer></script>
-</body>
-</html>
+<body class="glaze-canvas product-mesh">
+<a class="skip-link" href="#main">Skip to content</a>
+<header class="site-header glaze-material-soft"><div class="shell header-row">
+  <a class="brand glaze-focusable" href="#top" aria-label="GoreeCloud Mesh home"><img src="/assets/goreecloud-mesh-mark.svg" width="40" height="40" alt=""><span><strong>GoreeCloud Mesh</strong><small>Weave · coordination fabric</small></span></a>
+  <nav aria-label="Primary"><a href="#model">Model</a><a href="#boundaries">Boundaries</a><a href="#status">Status</a><a href="https://github.com/GoreeCloud/goreecloud-mesh">Source</a></nav>
+  <div class="theme-group" role="group" aria-label="Appearance"><button type="button" data-theme-choice="system" aria-pressed="true">System</button><button type="button" data-theme-choice="light" aria-pressed="false">Light</button><button type="button" data-theme-choice="dark" aria-pressed="false">Dark</button></div>
+</div></header>
+<main id="main" class="shell" tabindex="-1">
+<section class="hero mesh-hero glaze-surface-raised" id="top"><div class="hero-copy"><span class="eyebrow">Active development · Glaze UI 2.2 Stable</span><h1>Coordinate the platform.<br><span>Keep authority distributed.</span></h1><p>Mesh gives GoreeCloud a first-party coordination fabric for discovering registered capabilities, understanding dependencies, evaluating policy, and moving lifecycle events without silently taking ownership of another system.</p><div class="actions"><a class="glaze-button" data-variant="emphasis" href="#model">Explore the model</a><a class="glaze-button" data-variant="soft" href="https://github.com/GoreeCloud/goreecloud-mesh">View source</a></div><p class="truth-note">Development source exists today. Production adapters, authenticated production access, Mesh Center runtime acceptance, public-site deployment acceptance, and Stable product qualification remain separately gated.</p></div>
+<div class="mesh-visual" aria-label="Conceptual Mesh relationship model"><div class="mesh-orbit"><img src="/assets/goreecloud-mesh-mark.svg" width="132" height="132" alt="GoreeCloud Mesh Weave mark"><span class="node n1">Registry</span><span class="node n2">Graph</span><span class="node n3">Policy</span><span class="node n4">Events</span></div><p>Conceptual model — not live platform state.</p></div></section>
+<section class="section-block" id="model"><div class="section-heading"><span class="eyebrow">Explicit coordination</span><h2>A shared model of how GoreeCloud fits together.</h2><p>Mesh replaces hidden coupling with registered capabilities and explicit relationships. Discovery does not grant authorization, and coordination does not become authority transfer.</p></div><div class="cap-grid"><article class="glaze-card glaze-surface"><b>01</b><h3>Registry</h3><p>Records approved service identities, kinds, versions, capabilities, dependencies, labels, state, and conformance context.</p></article><article class="glaze-card glaze-surface-raised"><b>02</b><h3>Graph</h3><p>Models direct relationships and computes dependency context so impact can be explained rather than guessed.</p></article><article class="glaze-card glaze-material-soft"><b>03</b><h3>Policy</h3><p>Fails closed when actors, targets, capabilities, availability, or enabled relationships do not satisfy the registered contract.</p></article><article class="glaze-card glaze-surface"><b>04</b><h3>Events</h3><p>Moves bounded relationship and lifecycle events while keeping application payload ownership with the source system.</p></article></div></section>
+<section class="section-block" id="boundaries"><div class="section-heading"><span class="eyebrow">Authority boundaries</span><h2>Connect the systems. Do not collapse them.</h2><p>Mesh coordinates across first-party systems while their specialized responsibilities stay where they belong.</p></div><div class="boundary-layout"><div class="boundary-list"><article><span>Identity</span><p>Authentication, authorization, accounts, devices, credentials, sessions, and delegated authority remain Identity responsibilities.</p></article><article><span>Wardveil Security</span><p>Protection, trust, verification, detection, response, and security evidence remain security responsibilities.</p></article><article><span>Privacy Shield</span><p>Consent, minimization, governance, retention boundaries, and user control remain privacy responsibilities.</p></article><article><span>Everkeep</span><p>Backup, recovery, preservation, portability, succession, and continuity remain resilience responsibilities.</p></article></div><aside class="principle-panel glaze-material-deep"><span class="eyebrow">Core invariant</span><strong>authority_transfer = false</strong><p>Relationship discovery and coordination are never an authentication bypass, a transport shortcut, or permission to mutate another system.</p></aside></div></section>
+<section class="section-block" id="status"><div class="status-card glaze-surface-raised"><div><span class="eyebrow">Current boundary</span><h2>Native foundation in source. Production acceptance stays explicit.</h2></div><div class="status-grid"><article><h3>Present</h3><ul><li>Native Go Registry, Graph, Policy, and Events foundation</li><li>Private-first API and local state persistence</li><li>Runtime platform-contract evidence registry</li><li>Coordination contracts for first-party system boundaries</li></ul></article><article><h3>Still gated</h3><ul><li>Production Identity verifier and authenticated service access</li><li>Production Monitoring, Gateway, and Network adapters</li><li>Runtime Glaze, Wardveil, Privacy Shield, and Everkeep acceptance</li><li>Production deployment, recovery, rollback, and exact-revision approval</li></ul></article></div></div></section>
+</main>
+<footer><div class="shell footer-row"><div><strong>GoreeCloud Mesh</strong><span>Coordination without authority transfer.</span></div><nav aria-label="Footer"><a href="https://www.goreecloud.com/">GoreeCloud</a><a href="https://projects.goreecloud.com/">Projects</a><a href="https://github.com/GoreeCloud/goreecloud-mesh">GitHub</a></nav></div></footer>
+<script src="/assets/site.js" defer></script>
+</body></html>
