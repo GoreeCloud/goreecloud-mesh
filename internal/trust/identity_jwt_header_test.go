@@ -22,14 +22,14 @@ func TestIdentityJWTVerifierRejectsAmbiguousProtectedHeaders(t *testing.T) {
 	defer server.Close()
 	now := time.Date(2026, 9, 1, 23, 58, 0, 0, time.UTC)
 	claims := map[string]any{
-		"iss": "goreecloud-identity",
-		"aud": "goreecloud-mesh",
-		"sub": "service:privacy-shield",
+		"iss":        "goreecloud-identity",
+		"aud":        "goreecloud-mesh",
+		"sub":        "service:privacy-shield",
 		"service_id": "privacy-shield",
-		"scope": "mesh.evidence.write",
-		"iat": now.Unix(),
-		"exp": now.Add(5 * time.Minute).Unix(),
-		"jti": "header-negative-control",
+		"scope":      "mesh.evidence.write",
+		"iat":        now.Unix(),
+		"exp":        now.Add(5 * time.Minute).Unix(),
+		"jti":        "header-negative-control",
 	}
 
 	cases := map[string]map[string]any{
