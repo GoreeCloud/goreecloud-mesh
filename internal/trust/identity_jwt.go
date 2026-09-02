@@ -43,9 +43,14 @@ type IdentityJWTVerifier struct {
 }
 
 type jwtHeader struct {
-	Alg string `json:"alg"`
-	Kid string `json:"kid"`
-	Typ string `json:"typ,omitempty"`
+	Alg  string          `json:"alg"`
+	Kid  string          `json:"kid"`
+	Typ  string          `json:"typ,omitempty"`
+	Crit []string        `json:"crit,omitempty"`
+	JKU  string          `json:"jku,omitempty"`
+	JWK  json.RawMessage `json:"jwk,omitempty"`
+	X5U  string          `json:"x5u,omitempty"`
+	X5C  []string        `json:"x5c,omitempty"`
 }
 
 type identityClaims struct {
@@ -105,6 +110,15 @@ func (v *IdentityJWTVerifier) Verify(r *http.Request) (Principal, error) {
 	}
 	if header.Alg != "RS256" {
 		return Principal{}, errors.New("identity token must use RS256")
+	}
+	if header.Typ != "JWT" {
+		return Principal{}, errors.New("identity token typ must be JWT")
+	}
+	if len(header.Crit) != 0 {
+		return Principal{}, errors.New("identity token must not use unsupported critical headers")
+	}
+	if strings.TrimSpace(header.JKU) != "" || len(header.JWK) != 0 || strings.TrimSpace(header.X5U) != "" || len(header.X5C) != 0 {
+		return Principal{}, errors.New("identity token must not select or embed alternate verification keys")
 	}
 	if !validIdentityKeyID(header.Kid) {
 		return Principal{}, errors.New("identity token kid is invalid")
