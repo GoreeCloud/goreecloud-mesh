@@ -93,6 +93,7 @@ check("segment.com" not in html.lower(), "analytics/tracker runtime is forbidden
 headers = (BASE / "_headers").read_text(encoding="utf-8")
 check("Content-Security-Policy:" in headers, "Content Security Policy missing")
 check("connect-src 'none'" in headers, "public website must not make browser network API connections")
+check("Strict-Transport-Security: max-age=31536000" in headers, "HSTS policy missing")
 check("Referrer-Policy: no-referrer" in headers, "strict referrer policy missing")
 
 if "mesh" in PRODUCT:
