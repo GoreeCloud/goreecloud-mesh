@@ -25,7 +25,18 @@ The website is a ground-up consumer of **Glaze UI 2.2.0 Stable**. `website/glaze
 - `website/glaze.lock.json` — Glaze UI 2.2.0 Stable consumer lock
 - `scripts/build_public_site.py` — produces the isolated `dist/` artifact
 - `scripts/validate_public_site.py` — validates branding, Glaze provenance, accessibility hooks, security boundaries, public truth, and built-asset integrity
-- `.github/workflows/validate-website.yml` — exact-revision website acceptance gate
+- `scripts/verify_public_deployment.py` — fixed-host production verifier for `mesh.goreecloud.com`; checks HTTPS reachability, reviewed homepage/robots/Interlace/404 bytes, canonical Interlace markers, required security headers, and indexing behavior
+- `.github/workflows/validate-website.yml` — exact-revision website acceptance gate; pull requests validate source/build/verifier configuration, while pushes to `main` additionally verify the public custom-domain deployment after source validation
+
+## Production verification contract
+
+Cloudflare Pages deployment status and custom-domain production equivalence are separate evidence gates.
+
+A successful Cloudflare Pages deployment check proves that the configured `goreecloud-mesh` Pages project accepted the corresponding Git revision. It does not by itself prove that `mesh.goreecloud.com` is correctly bound, reachable over HTTPS, or serving the reviewed bytes.
+
+For a push to `main`, the website workflow runs `scripts/verify_public_deployment.py` against the fixed canonical hostname `https://mesh.goreecloud.com/`. The verifier retries briefly to tolerate normal ordering between the Cloudflare deployment check and GitHub Actions. Production verification passes only when the canonical hostname is reachable over HTTPS and the reviewed homepage, `robots.txt`, Interlace mark, and 404 body match the exact repository source, the homepage identifies Interlace and the canonical hostname, required public security headers are present, and production indexing is not disabled.
+
+A successful production verification establishes website publication evidence only for the exact tested revision and public files. It does not establish GoreeCloud Mesh runtime interoperability, authenticated production access, platform-system runtime acceptance, product Stable qualification, or another technical authority claim.
 
 ## Public truth boundary
 
