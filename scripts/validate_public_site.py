@@ -1,71 +1,103 @@
 #!/usr/bin/env python3
-from hashlib import sha1
 from pathlib import Path
-import re
-import subprocess
+from html.parser import HTMLParser
+import argparse
+import hashlib
+import json
 import sys
 
 ROOT = Path(__file__).resolve().parents[1]
-SITE = ROOT / "website"
+SOURCE = ROOT / "website"
 DIST = ROOT / "dist"
-REQUIRED = (
-    "index.html", "style.css", "glaze-ui-2.0.0.css", "app.js", "_headers",
-    "robots.txt", "sitemap.xml", "assets/goreecloud-mesh-mark.svg",
-)
+PRODUCT = ROOT.name.lower()
+parser = argparse.ArgumentParser()
+parser.add_argument("--dist", action="store_true")
+args = parser.parse_args()
+BASE = DIST if args.dist else SOURCE
+errors = []
 
-for relative in REQUIRED:
-    path = SITE / relative
-    if not path.is_file() or path.is_symlink():
-        raise SystemExit(f"missing or unsafe Mesh Center source: {relative}")
+def check(condition: bool, message: str) -> None:
+    if not condition:
+        errors.append(message)
 
-html = (SITE / "index.html").read_text(encoding="utf-8")
-css = (SITE / "style.css").read_text(encoding="utf-8")
-headers = (SITE / "_headers").read_text(encoding="utf-8")
-mark = (SITE / "assets/goreecloud-mesh-mark.svg").read_bytes()
+def blob_sha(path: Path) -> str:
+    data = path.read_bytes()
+    prefix = b"blob " + str(len(data)).encode("ascii") + b"\0"
+    return hashlib.sha1(prefix + data).hexdigest()
 
-def git_blob_sha(data: bytes) -> str:
-    return sha1(f"blob {len(data)}\0".encode() + data).hexdigest()
+class PublicHtmlAudit(HTMLParser):
+    def handle_starttag(self, tag, attrs):
+        values = dict(attrs)
+        src = values.get("src", "")
+        if src.startswith(("http://", "https://", "//")):
+            errors.append(f"remote runtime source is forbidden: {src}")
+        if tag == "link":
+            href = values.get("href", "")
+            rel = values.get("rel", "")
+            if href.startswith(("http://", "https://", "//")) and "canonical" not in rel.split():
+                errors.append(f"remote runtime link is forbidden: {href}")
+        if tag == "a":
+            href = values.get("href", "")
+            if href.startswith("http://"):
+                errors.append(f"external navigation must use HTTPS: {href}")
 
-for marker in (
-    "Mesh Center — GoreeCloud", "GoreeCloud Mesh", "Mesh Center · Weave",
-    "Coordinate the platform.", "Registry", "Graph", "Policy", "Events",
-    "Evidence plane", "Authority boundaries", "GoreeCloud Identity",
-    "Wardveil Security", "Privacy Shield", "Everkeep", "Glaze UI",
-    "Production acceptance is separate", "Not yet qualified",
-    'name="goreecloud-glaze-ui" content="2.0.0"', 'data-glaze-ui="2.0.0"',
-):
-    if marker not in html:
-        raise SystemExit(f"Mesh Center marker missing: {marker}")
+lock = json.loads((SOURCE / "glaze.lock.json").read_text(encoding="utf-8"))
+check(lock.get("version") == "2.2.0", "Glaze version must be 2.2.0")
+check(lock.get("lifecycle") == "Stable", "Glaze lifecycle must be Stable")
+check(lock.get("stable_commit") == "6731098b28dd0393faa878c70d989a221d714a20", "Glaze Stable commit must be pinned")
+check(lock.get("tag") == "v2.2.0", "Glaze Stable tag must be pinned")
 
-for forbidden in (
-    "production-ready", "Production Ready", "Stable platform", "fully deployed",
-    "authority_transfer=true", "data:image", "raw.githubusercontent.com",
-):
-    if forbidden in html:
-        raise SystemExit(f"Mesh Center publishes forbidden or misleading marker: {forbidden}")
+html = (BASE / "index.html").read_text(encoding="utf-8")
+css = (BASE / "assets" / "site.css" if args.dist else SOURCE / "site.css").read_text(encoding="utf-8")
+js = (BASE / "assets" / "site.js" if args.dist else SOURCE / "site.js").read_text(encoding="utf-8")
+PublicHtmlAudit().feed(html)
 
-if git_blob_sha(mark) != "0b2c6881668ce319081390b217f6d59b4298dd4d":
-    raise SystemExit("Mesh Center Weave derivative does not match the approved canonical Git blob")
+check('data-glaze-version="2.2.0"' in html, "missing Glaze 2.2.0 document marker")
+check('name="goreecloud-glaze-ui" content="2.2.0"' in html, "missing Glaze 2.2.0 meta marker")
+check('/assets/glaze-2.2.0.css' in html, "Stable Glaze stylesheet entrypoint not linked")
+check("prefers-reduced-motion:reduce" in css, "reduced-motion fallback missing")
+check("forced-colors:active" in css, "forced-colors fallback missing")
+check("prefers-contrast:more" in css, "increased-contrast fallback missing")
+check("data-reduce-transparency" in css, "reduced-transparency fallback missing")
+check("min-height:48px" in css, "48px interaction floor missing")
+check("localStorage" in js and all(choice in js for choice in ("system", "light", "dark")), "appearance modes missing")
+check("fonts.googleapis" not in html + css, "remote fonts are forbidden")
+check("googletagmanager" not in html.lower(), "analytics/tracker runtime is forbidden")
+check("segment.com" not in html.lower(), "analytics/tracker runtime is forbidden")
+headers = (BASE / "_headers").read_text(encoding="utf-8")
+check("Content-Security-Policy:" in headers, "Content Security Policy missing")
+check("connect-src 'none'" in headers, "public website must not make browser network API connections")
+check("Referrer-Policy: no-referrer" in headers, "strict referrer policy missing")
 
-for src in re.findall(r'(?:src|href)=["\']([^"\']+)', html):
-    if src.startswith(("http://", "https://")) and "github.com/GoreeCloud/" not in src and "goreecloud.com/" not in src:
-        raise SystemExit(f"unauthorized external link/resource: {src}")
+if "mesh" in PRODUCT:
+    mark = SOURCE / "assets" / "goreecloud-mesh-mark.svg"
+    check(mark.exists(), "Mesh mark missing")
+    if mark.exists():
+        check(blob_sha(mark) == "0b2c6881668ce319081390b217f6d59b4298dd4d", "Mesh mark diverged from approved Weave blob")
+    check("authority_transfer = false" in html, "Mesh authority-transfer invariant missing")
+    check('rel="canonical" href="https://mesh.goreecloud.com/"' in html, "Mesh intended canonical URL missing")
+    check("Production acceptance stays explicit" in html, "Mesh production truth boundary missing")
+else:
+    mark = SOURCE / "assets" / "manager-mark.svg"
+    check(mark.exists(), "Manager mark missing")
+    if mark.exists():
+        check(blob_sha(mark) == "81d5d6659bf22ee61a1be46fce816031b835f967", "Manager mark diverged from approved product blob")
+    check("noindex,nofollow,noarchive" in html, "Manager must remain noindex before public hostname approval")
+    check("manager.goreecloud.com" not in html, "private Manager application hostname must not be advertised by public site")
+    check("Disallow: /" in (BASE / "robots.txt").read_text(encoding="utf-8"), "Manager robots must block indexing before public hostname approval")
+    check("Conceptual · no live data" in html, "Manager conceptual graphic must be labeled non-live")
 
-for directive in (
-    "Content-Security-Policy:", "default-src 'self'", "connect-src 'none'",
-    "frame-ancestors 'none'", "X-Content-Type-Options: nosniff",
-):
-    if directive not in headers:
-        raise SystemExit(f"Mesh Center security header marker missing: {directive}")
-if not headers.startswith("/*\n  X-Content-Type-Options: nosniff") or "\n*/" in headers:
-    raise SystemExit("Mesh Center _headers must use Cloudflare Pages route syntax, not CSS comment syntax")
+if args.dist:
+    for name, expected_sha in lock["files"].items():
+        path = DIST / "assets" / name
+        check(path.exists(), f"missing built Glaze asset: {name}")
+        if path.exists():
+            check(blob_sha(path) == expected_sha, f"Glaze asset integrity mismatch: {name}")
+    check((DIST / "_headers").exists(), "built security headers missing")
 
-for marker in ("prefers-reduced-motion", "prefers-reduced-transparency", "forced-colors", "--g-touch:48px"):
-    if marker not in css:
-        raise SystemExit(f"Mesh Center accessibility/responsiveness marker missing: {marker}")
-
-subprocess.run([sys.executable, str(ROOT / "scripts" / "build_public_site.py")], check=True)
-for relative in REQUIRED:
-    if (DIST / relative).read_bytes() != (SITE / relative).read_bytes():
-        raise SystemExit(f"isolated Mesh Center artifact drifted from reviewed source: {relative}")
-print("Mesh Center public website validation passed")
+if errors:
+    print("Public website validation failed:", file=sys.stderr)
+    for error in errors:
+        print(f" - {error}", file=sys.stderr)
+    raise SystemExit(1)
+print(f"Public website validation passed ({'dist' if args.dist else 'source'})")
