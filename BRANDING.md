@@ -14,11 +14,13 @@ GoreeCloud Mesh branding is governed by the unified GoreeCloud branding reposito
 
 ## Current artwork status
 
-GoreeCloud Mesh has an approved canonical system identity: **Interlace**.
+GoreeCloud Mesh has one approved canonical system identity: **Interlace**.
 
 The approved source lives only in the unified branding repository as the authority. This repository must not invent an alternate Mesh logo, inherited GoreeCloud logo, generic network glyph, placeholder, or independently modified derivative.
 
 Consumer-local copies may be added only when packaging, deployment, offline use, or performance requires them. Any such copy must remain byte- or geometry-traceable to the canonical source and must not become an independent branding authority.
+
+Superseded, retired, rejected, obsolete, or previous Mesh artwork must not be retained in this repository as alternate, historical, archive, legacy, or fallback assets. When the canonical identity changes, outdated consumer copies are replaced or removed.
 
 ## Identity meaning
 
@@ -33,10 +35,11 @@ The identity remains distinct from GoreeCloud Network, DNS, Gateway, and other p
 3. Create platform-specific derivatives only where required.
 4. Record the canonical asset path and Git blob in any consumer packaging or identity manifest.
 5. Revalidate consumers when the approved source changes.
+6. Remove or replace any superseded local artwork; do not keep prior identities as repository assets.
 
-## Historical identity
+## Revision-history boundary
 
-The former **Weave** identity is preserved through the canonical branding repository's Git history. It is no longer the current production identity and must not be reintroduced as a competing local authority.
+GoreeCloud revision-control history may contain earlier source states as part of the governed audit and recovery trail. Those historical Git objects are not retained branding assets, are not current identity sources, and must not be copied back into the working tree, packages, websites, documentation asset folders, or consumer archives.
 
 ## Authority boundary
 
