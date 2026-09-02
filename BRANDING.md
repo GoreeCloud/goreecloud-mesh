@@ -7,14 +7,14 @@ GoreeCloud Mesh branding is governed by the unified GoreeCloud branding reposito
 - Repository: `GoreeCloud/goreecloud-branding-assets`
 - System path: `systems/goreecloud-mesh/`
 - Canonical asset: `systems/goreecloud-mesh/goreecloud-mesh-mark.svg`
-- Canonical Git blob: `0b2c6881668ce319081390b217f6d59b4298dd4d`
-- Identity name: **Weave**
+- Canonical Git blob: `5362a52bd9fb38379f083a4d894934ed1acf9b67`
+- Identity name: **Interlace**
 - Presentation surface: Mesh Center
-- Approval source: `GoreeCloud/goreecloud-branding-assets` merge `91689772bce2bc14c79bf4fb44b73cf6cbd89847`
+- Approval source: `GoreeCloud/goreecloud-branding-assets` merge `20caf2a41cee7cf7241121cc17933f4129784842`
 
 ## Current artwork status
 
-GoreeCloud Mesh has an approved canonical system identity: **Weave**.
+GoreeCloud Mesh has an approved canonical system identity: **Interlace**.
 
 The approved source lives only in the unified branding repository as the authority. This repository must not invent an alternate Mesh logo, inherited GoreeCloud logo, generic network glyph, placeholder, or independently modified derivative.
 
@@ -22,7 +22,7 @@ Consumer-local copies may be added only when packaging, deployment, offline use,
 
 ## Identity meaning
 
-Weave represents the coordination and governance plane connecting first-party applications, services, and systems. Its interwoven routes and distributed endpoints communicate governed coordination without reducing Mesh to a generic network diagram or a single central authority hub.
+Interlace represents the coordination and governance fabric connecting first-party applications, services, and systems. Three independent ribbons interlace around an intentionally open center, communicating governed coordination without implying a single authoritative hub.
 
 The identity remains distinct from GoreeCloud Network, DNS, Gateway, and other products that represent transport, resolution, or connectivity rather than platform-wide coordination and governance.
 
@@ -34,6 +34,10 @@ The identity remains distinct from GoreeCloud Network, DNS, Gateway, and other p
 4. Record the canonical asset path and Git blob in any consumer packaging or identity manifest.
 5. Revalidate consumers when the approved source changes.
 
+## Historical identity
+
+The former **Weave** identity is preserved through the canonical branding repository's Git history. It is no longer the current production identity and must not be reintroduced as a competing local authority.
+
 ## Authority boundary
 
-GoreeCloud Mesh is the substantive coordination and governance plane connecting first-party applications, services, and systems. Branding does not create service authority, interoperability, evidence validity, Stable acceptance, or production readiness. Those claims remain governed by Mesh implementation and current authoritative evidence.
+GoreeCloud Mesh is the substantive coordination and governance plane connecting first-party applications, services, and systems. Branding does not create service authority, interoperability, evidence validity, Stable acceptance, deployment status, security, privacy, authorization, or production readiness. Those claims remain governed by Mesh implementation and current authoritative evidence.

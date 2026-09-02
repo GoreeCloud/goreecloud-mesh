@@ -21,7 +21,7 @@ The website is a ground-up consumer of **Glaze UI 2.2.0 Stable**. `website/glaze
 ## Source layout
 
 - `website/` — reviewed public source
-- `website/assets/goreecloud-mesh-mark.svg` — byte-identical consumer derivative of the approved Weave asset
+- `website/assets/goreecloud-mesh-mark.svg` — byte-identical consumer derivative of the approved **Interlace** asset (`5362a52bd9fb38379f083a4d894934ed1acf9b67`)
 - `website/glaze.lock.json` — Glaze UI 2.2.0 Stable consumer lock
 - `scripts/build_public_site.py` — produces the isolated `dist/` artifact
 - `scripts/validate_public_site.py` — validates branding, Glaze provenance, accessibility hooks, security boundaries, public truth, and built-asset integrity

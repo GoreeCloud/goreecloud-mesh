@@ -1,44 +1,51 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-labelledby="title desc">
-  <title id="title">GoreeCloud Mesh Weave mark</title>
-  <desc id="desc">Interwoven governed coordination routes connecting distributed endpoints without a single central authority hub.</desc>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">GoreeCloud Mesh Interlace emblem</title>
+  <desc id="desc">Three independent Glaze UI ribbons interlace around an open center to represent distributed coordination without a central authority hub.</desc>
   <defs>
-    <linearGradient id="routeA" x1="42" y1="52" x2="214" y2="204" gradientUnits="userSpaceOnUse">
+    <linearGradient id="meshA" x1="56" y1="252" x2="454" y2="178" gradientUnits="userSpaceOnUse">
       <stop offset="0" stop-color="#22D3EE"/>
-      <stop offset="0.52" stop-color="#3B82F6"/>
+      <stop offset=".52" stop-color="#3B82F6"/>
       <stop offset="1" stop-color="#8B5CF6"/>
     </linearGradient>
-    <linearGradient id="routeB" x1="42" y1="204" x2="214" y2="52" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#2DD4BF"/>
-      <stop offset="0.48" stop-color="#38BDF8"/>
-      <stop offset="1" stop-color="#6366F1"/>
+    <linearGradient id="meshB" x1="76" y1="114" x2="410" y2="424" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#60A5FA"/>
+      <stop offset=".52" stop-color="#6366F1"/>
+      <stop offset="1" stop-color="#C084FC"/>
     </linearGradient>
-    <linearGradient id="nodeStroke" x1="32" y1="40" x2="224" y2="216" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#67E8F9"/>
-      <stop offset="0.5" stop-color="#60A5FA"/>
-      <stop offset="1" stop-color="#A78BFA"/>
+    <linearGradient id="meshC" x1="432" y1="86" x2="118" y2="430" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#A78BFA"/>
+      <stop offset=".50" stop-color="#8B5CF6"/>
+      <stop offset="1" stop-color="#2DD4BF"/>
     </linearGradient>
+    <filter id="meshDepth" x="-28%" y="-28%" width="156%" height="156%">
+      <feDropShadow dx="0" dy="8" stdDeviation="8" flood-color="#020617" flood-opacity=".28"/>
+    </filter>
   </defs>
 
-  <path d="M49 79c42 0 50 98 99 98 24 0 39-18 59-37" fill="none" stroke="url(#routeA)" stroke-width="20" stroke-linecap="round"/>
-  <path d="M49 177c42 0 50-98 99-98 24 0 39 18 59 37" fill="none" stroke="url(#routeB)" stroke-width="20" stroke-linecap="round"/>
+  <g transform="translate(256 256)" fill="none" stroke-linecap="round" filter="url(#meshDepth)">
+    <path d="M-190 0 C-122 -110 -35 -120 0 -78 C35 -36 122 -28 190 -86"
+          stroke="#062A3F" stroke-width="74" opacity=".28"/>
+    <path d="M-190 0 C-122 -110 -35 -120 0 -78 C35 -36 122 -28 190 -86"
+          stroke="url(#meshA)" stroke-width="54"/>
 
-  <path d="M75 58v140" fill="none" stroke="url(#routeB)" stroke-width="10" stroke-linecap="round" opacity="0.72"/>
-  <path d="M181 58v140" fill="none" stroke="url(#routeA)" stroke-width="10" stroke-linecap="round" opacity="0.72"/>
+    <g transform="rotate(120)">
+      <path d="M-190 0 C-122 -110 -35 -120 0 -78 C35 -36 122 -28 190 -86"
+            stroke="#171744" stroke-width="74" opacity=".28"/>
+      <path d="M-190 0 C-122 -110 -35 -120 0 -78 C35 -36 122 -28 190 -86"
+            stroke="url(#meshB)" stroke-width="54"/>
+    </g>
 
-  <path d="M109 111c12-20 24-32 39-32" fill="none" stroke="#F8FAFC" stroke-width="6" stroke-linecap="round" opacity="0.92"/>
-  <path d="M109 145c12 20 24 32 39 32" fill="none" stroke="#F8FAFC" stroke-width="6" stroke-linecap="round" opacity="0.92"/>
-
-  <g fill="#F8FAFC" stroke="url(#nodeStroke)" stroke-width="7">
-    <circle cx="49" cy="79" r="14"/>
-    <circle cx="49" cy="177" r="14"/>
-    <circle cx="207" cy="116" r="14"/>
-    <circle cx="207" cy="140" r="14"/>
+    <g transform="rotate(240)">
+      <path d="M-190 0 C-122 -110 -35 -120 0 -78 C35 -36 122 -28 190 -86"
+            stroke="#24103E" stroke-width="74" opacity=".28"/>
+      <path d="M-190 0 C-122 -110 -35 -120 0 -78 C35 -36 122 -28 190 -86"
+            stroke="url(#meshC)" stroke-width="54"/>
+    </g>
   </g>
 
-  <g fill="#0F172A" opacity="0.9">
-    <circle cx="49" cy="79" r="4.5"/>
-    <circle cx="49" cy="177" r="4.5"/>
-    <circle cx="207" cy="116" r="4.5"/>
-    <circle cx="207" cy="140" r="4.5"/>
+  <g fill="none" stroke-linecap="round" opacity=".56">
+    <path d="M102 246 C130 198 165 173 202 170" stroke="#A5F3FC" stroke-width="8"/>
+    <path d="M355 133 C386 171 397 206 391 238" stroke="#C7D2FE" stroke-width="8"/>
+    <path d="M305 387 C263 400 225 393 195 375" stroke="#E9D5FF" stroke-width="8"/>
   </g>
 </svg>

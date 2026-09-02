@@ -99,7 +99,7 @@ if "mesh" in PRODUCT:
     mark = SOURCE / "assets" / "goreecloud-mesh-mark.svg"
     check(mark.exists(), "Mesh mark missing")
     if mark.exists():
-        check(blob_sha(mark) == "0b2c6881668ce319081390b217f6d59b4298dd4d", "Mesh mark diverged from approved Weave blob")
+        check(blob_sha(mark) == "5362a52bd9fb38379f083a4d894934ed1acf9b67", "Mesh mark diverged from approved Interlace blob")
     check("authority_transfer = false" in html, "Mesh authority-transfer invariant missing")
     check('rel="canonical" href="https://mesh.goreecloud.com/"' in html, "Mesh intended canonical URL missing")
     check("Production acceptance stays explicit" in html, "Mesh production truth boundary missing")
