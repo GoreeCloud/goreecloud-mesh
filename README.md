@@ -43,7 +43,7 @@ Mesh is the coordination authority within the seven-system GoreeCloud Integral P
 
 The platform evidence-plane contract is `contracts/mesh.platform-evidence-plane.v1.json`. It binds each evidence producer to its canonical repository and producer-owned Mesh evidence profile while keeping `authority_transfer` false. GoreeCloud Manager is an administrative consumer/authority relationship rather than an evidence producer in that five-producer evidence-plane contract.
 
-The repository-root `goreecloud.platform.yaml` is the current platform-wide machine-readable declaration for Mesh under GoreeCloud Platform Contract v0.1. `docs/platform-conformance.json` remains supplemental Mesh-specific conformance evidence and acceptance detail; it must not compete with or silently weaken the root Platform Contract declaration.
+The repository-root `goreecloud.platform.yaml` is the current platform-wide machine-readable declaration for Mesh under GoreeCloud Platform Contract v0.2. `docs/platform-conformance.json` remains supplemental Mesh-specific conformance evidence and acceptance detail; it must not compete with or silently weaken the root Platform Contract declaration.
 
 ## Run
 
