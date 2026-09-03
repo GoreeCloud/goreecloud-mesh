@@ -9,17 +9,28 @@ import (
 	"time"
 )
 
-// Platform identifies a mandatory GoreeCloud integral platform system.
+// Platform identifies a mandatory GoreeCloud Integral Platform System.
 type Platform string
 
 const (
-	GlazeUI       Platform = "glaze-ui"
-	Wardveil      Platform = "wardveil-security"
+	Manager       Platform = "goreecloud-manager"
 	PrivacyShield Platform = "privacy-shield"
+	Wardveil      Platform = "wardveil-security"
 	Everkeep      Platform = "everkeep"
+	GlazeUI       Platform = "glaze-ui"
+	Mesh          Platform = "goreecloud-mesh"
+	Identity      Platform = "goreecloud-identity"
 )
 
-var mandatory = []Platform{GlazeUI, Wardveil, PrivacyShield, Everkeep}
+var mandatory = []Platform{
+	Manager,
+	PrivacyShield,
+	Wardveil,
+	Everkeep,
+	GlazeUI,
+	Mesh,
+	Identity,
+}
 var fullGitRevisionPattern = regexp.MustCompile(`^[0-9a-f]{40}$`)
 
 type State string
@@ -162,8 +173,8 @@ func evidenceFreshAt(v Evidence, evaluatedAt time.Time) bool {
 	return !evaluatedAt.UTC().After(v.ValidUntil.UTC())
 }
 
-// StableEligible is deliberately fail-closed: all four mandatory contracts must
-// have validated, producer-declared current evidence.
+// StableEligible is deliberately fail-closed: all seven mandatory Integral
+// Platform Systems must have validated, producer-declared current evidence.
 func (r *Registry) StableEligible() bool {
 	return r.StableEligibleAt(time.Now().UTC())
 }
