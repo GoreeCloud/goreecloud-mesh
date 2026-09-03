@@ -5,6 +5,8 @@
   "development_model": "original-native-goreecloud",
   "lifecycle": "development",
   "stable_eligible": false,
+  "platform_contract_manifest": "../goreecloud.platform.yaml",
+  "scope": "supplemental Mesh-specific source/runtime conformance evidence and acceptance detail; the repository-root GoreeCloud Platform Contract manifest is the platform-wide machine-readable declaration",
   "source_contract_catalog": {
     "state": "validated",
     "api": "GET /v1/platforms",
@@ -12,13 +14,32 @@
     "scope": "authority metadata, expected contract-source discovery, and fail-closed source status inspection only; runtime conformance remains independently evidence-gated"
   },
   "systems": {
+    "manager": {
+      "required": true,
+      "state": "pending",
+      "evidence": [
+        "GoreeCloud Manager remains the central administration and operational-management authority while Mesh remains the coordination authority.",
+        "The repository documents the authority boundary explicitly and does not transfer Manager administrative authority into Mesh.",
+        "A direct Manager-to-Mesh operational integration remains planned and is not treated as implemented or Stable-gate-satisfied."
+      ]
+    },
+    "identity": {
+      "required": true,
+      "state": "pending",
+      "evidence": [
+        "contracts/mesh.identity-verification.json defines the source-level GoreeCloud Identity verification boundary.",
+        "docs/identity-trust.md documents verified-principal metadata, scopes, issuer validation, and fail-closed protected-route behavior.",
+        "A deployed GoreeCloud Identity verifier and production credential mechanism remain pending and are not inferred from the source-level abstraction."
+      ]
+    },
     "glaze_ui": {
       "required": true,
       "state": "pending",
       "evidence": [
         "Mesh catalogs Glaze UI as the authority for design, interaction, accessibility, adaptive behavior, and visual presentation and points consumers to the Glaze UI conformance contract.",
-        "The platform-status view exposes missing Glaze UI runtime evidence as pending and not Stable-gate-satisfied rather than omitting or promoting it.",
-        "Mesh Console is documented as a required current-Stable Glaze UI consumer but is not yet implemented or runtime-accepted."
+        "The standalone public Mesh website is a pinned Glaze UI 2.2.0 Stable consumer with its own source/deployment evidence boundary.",
+        "The platform-status view exposes missing product-interface Glaze UI runtime evidence as pending and not Stable-gate-satisfied rather than omitting or promoting it.",
+        "The administrative Mesh product interface is not yet complete or product-level runtime accepted."
       ]
     },
     "wardveil_security": {
@@ -54,11 +75,12 @@
     }
   },
   "acceptance_gates": [
+    "Direct GoreeCloud Manager operational integration",
     "GoreeCloud Identity-backed service authentication and authorization",
     "Wardveil Security contract implementation and runtime evidence",
     "Privacy Shield contract implementation and retention/privacy evidence",
     "Everkeep target backup/export/restore, freshness, exact-revision, and recovery evidence",
-    "Current Stable Glaze UI Mesh Console implementation and accessibility acceptance",
+    "Current Stable Glaze UI administrative product interface implementation and accessibility acceptance",
     "Monitoring health adapter and health-evidence provenance",
     "Gateway and Network enforcement-state adapters",
     "Durable external event delivery semantics",
