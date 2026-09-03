@@ -7,6 +7,9 @@ func TestCatalogCoversMandatoryPlatforms(t *testing.T) {
 	if len(entries) != len(Mandatory()) {
 		t.Fatalf("catalog entries = %d, mandatory platforms = %d", len(entries), len(Mandatory()))
 	}
+	if len(entries) != 7 {
+		t.Fatalf("catalog entries = %d, expected seven Integral Platform Systems", len(entries))
+	}
 
 	seen := map[Platform]bool{}
 	for _, entry := range entries {
@@ -25,10 +28,20 @@ func TestCatalogCoversMandatoryPlatforms(t *testing.T) {
 		seen[entry.Platform] = true
 	}
 
-	for _, platform := range Mandatory() {
+	for _, platform := range []Platform{Manager, PrivacyShield, Wardveil, Everkeep, GlazeUI, Mesh, Identity} {
 		if !seen[platform] {
-			t.Fatalf("mandatory platform %q missing from catalog", platform)
+			t.Fatalf("Integral Platform System %q missing from catalog", platform)
 		}
+	}
+}
+
+func TestCatalogUsesCurrentCanonicalGlazeRepository(t *testing.T) {
+	entry, ok := CatalogFor(GlazeUI)
+	if !ok {
+		t.Fatal("Glaze UI missing from platform catalog")
+	}
+	if entry.Repository != "GoreeCloud/goreecloud-glaze-ui" {
+		t.Fatalf("Glaze UI repository = %q, expected canonical GoreeCloud/goreecloud-glaze-ui", entry.Repository)
 	}
 }
 
