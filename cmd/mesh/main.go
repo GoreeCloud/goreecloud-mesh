@@ -14,6 +14,7 @@ import (
 	"github.com/GoreeCloud/goreecloud-mesh/internal/contracts"
 	"github.com/GoreeCloud/goreecloud-mesh/internal/governance"
 	"github.com/GoreeCloud/goreecloud-mesh/internal/mesh"
+	"github.com/GoreeCloud/goreecloud-mesh/internal/platformregistry"
 	"github.com/GoreeCloud/goreecloud-mesh/internal/store"
 	"github.com/GoreeCloud/goreecloud-mesh/internal/trust"
 )
@@ -21,6 +22,7 @@ import (
 func main() {
 	listen := flag.String("listen", "127.0.0.1:8787", "HTTP listen address")
 	statePath := flag.String("state", "./mesh-state.json", "durable Mesh state path; empty disables persistence")
+	platformRegistryPath := flag.String("platform-registry", "./mesh-platform-registry.json", "durable authority-preserving platform registry state path; empty disables persistence")
 	attestationPath := flag.String("source-attestations", "./mesh-source-attestations.json", "durable source-attestation state path; empty disables persistence")
 	runtimeEvidencePath := flag.String("runtime-evidence", "./mesh-runtime-evidence.json", "durable runtime contract evidence path; empty disables persistence")
 	evidenceEnvelopePath := flag.String("evidence-envelopes", "./mesh-evidence-envelopes.json", "durable producer-authoritative evidence envelope path; empty disables persistence")
@@ -34,6 +36,12 @@ func main() {
 	state, err := store.New(*statePath)
 	if err != nil {
 		logger.Error("load state", "error", err)
+		os.Exit(1)
+	}
+
+	platformRegistry, err := platformregistry.NewPersistent(*platformRegistryPath)
+	if err != nil {
+		logger.Error("load platform registry", "error", err)
 		os.Exit(1)
 	}
 
@@ -72,7 +80,8 @@ func main() {
 		logger.Warn("GoreeCloud Identity verifier is not configured; authenticated Mesh APIs will fail closed")
 	}
 
-	handler := meshapi.NewAuthorizedWithRecoveryAndEvidence(mesh.New(state), contractRegistry, attestationRegistry, recoveryRegistry, evidenceEnvelopeRegistry, verifier, logger)
+	baseHandler := meshapi.NewAuthorizedWithRecoveryAndEvidence(mesh.New(state), contractRegistry, attestationRegistry, recoveryRegistry, evidenceEnvelopeRegistry, verifier, logger)
+	handler := meshapi.WithPlatformRegistry(baseHandler, platformRegistry, verifier)
 	server := &http.Server{
 		Addr:              *listen,
 		Handler:           handler,
@@ -84,7 +93,7 @@ func main() {
 
 	errCh := make(chan error, 1)
 	go func() {
-		logger.Info("mesh starting", "listen", *listen, "state", *statePath, "source_attestations", *attestationPath, "runtime_evidence", *runtimeEvidencePath, "evidence_envelopes", *evidenceEnvelopePath, "everkeep_recovery_evidence", *recoveryEvidencePath)
+		logger.Info("mesh starting", "listen", *listen, "state", *statePath, "platform_registry", *platformRegistryPath, "source_attestations", *attestationPath, "runtime_evidence", *runtimeEvidencePath, "evidence_envelopes", *evidenceEnvelopePath, "everkeep_recovery_evidence", *recoveryEvidencePath)
 		errCh <- server.ListenAndServe()
 	}()
 
