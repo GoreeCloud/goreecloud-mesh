@@ -2,6 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://schemas.goreecloud.com/mesh/platform-record.v1.schema.json",
   "title": "GoreeCloud Mesh Platform Record v1",
+  "description": "Authority-preserving normalized representation of a GoreeCloud Platform Contract v0.2 declaration and its computed conformance evidence.",
   "type": "object",
   "additionalProperties": false,
   "required": ["schema", "source", "component", "platform_systems", "health", "recovery", "portability", "conformance", "observed_at"],
@@ -13,8 +14,8 @@
       "required": ["repository", "revision", "contract_schema_version", "authority_transfer"],
       "properties": {
         "repository": {"type": "string", "pattern": "^GoreeCloud/[A-Za-z0-9._-]+$"},
-        "revision": {"type": "string", "pattern": "^[A-Fa-f0-9]{40,64}$"},
-        "contract_schema_version": {"const": "1.0"},
+        "revision": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+        "contract_schema_version": {"const": "0.2"},
         "authority_transfer": {"const": false}
       }
     },
@@ -23,17 +24,17 @@
       "additionalProperties": false,
       "required": ["id", "product_name", "kind", "repository", "lifecycle", "version", "supported_platforms"],
       "properties": {
-        "id": {"type": "string", "minLength": 1},
+        "id": {"type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"},
         "product_name": {"type": "string", "minLength": 1},
-        "kind": {"type": "string", "minLength": 1},
+        "kind": {"enum": ["application", "service"]},
         "repository": {"type": "string", "pattern": "^GoreeCloud/[A-Za-z0-9._-]+$"},
-        "lifecycle": {"enum": ["Concept", "Experimental", "Development", "Release Candidate", "Stable", "Deprecated", "Retired"]},
+        "lifecycle": {"enum": ["concept", "experimental", "development", "release-candidate", "stable", "deprecated", "retired"]},
         "version": {"type": "string", "minLength": 1},
         "supported_platforms": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}}
       }
     },
     "capabilities": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
-    "dependencies": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+    "dependencies": {"type": "array", "uniqueItems": true, "items": {"type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"}},
     "relationships": {
       "type": "array",
       "items": {
@@ -41,7 +42,7 @@
         "additionalProperties": false,
         "required": ["target", "type", "required"],
         "properties": {
-          "target": {"type": "string", "minLength": 1},
+          "target": {"type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"},
           "type": {"type": "string", "minLength": 1},
           "required": {"type": "boolean"}
         }
@@ -93,11 +94,16 @@
     "conformance": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["overall_result", "stable_eligible"],
+      "required": ["declared_result", "computed_result", "stable_eligible", "evaluator_repository", "evaluator_revision", "evaluated_at"],
       "properties": {
-        "overall_result": {"enum": ["conformant", "non-conformant"]},
+        "declared_result": {"$ref": "#/$defs/conformanceState"},
+        "computed_result": {"$ref": "#/$defs/conformanceState"},
         "stable_eligible": {"type": "boolean"},
-        "missing_mandatory_evidence": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}}
+        "evaluator_repository": {"const": "GoreeCloud/GoreeCloud"},
+        "evaluator_revision": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+        "evaluated_at": {"type": "string", "format": "date-time"},
+        "missing_mandatory_evidence": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+        "blockers": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}}
       }
     },
     "evidence_refs": {
@@ -118,12 +124,14 @@
   },
   "$defs": {
     "verificationState": {"enum": ["verified", "implemented_unverified", "required_missing", "not_applicable", "unknown"]},
+    "conformanceState": {"enum": ["conformant", "nonconformant", "unverified"]},
+    "platformResult": {"enum": ["applicable-conformant", "applicable-migration-required", "applicable-blocked", "applicable-nonconformant", "not-applicable-justified"]},
     "platformSystem": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["status"],
+      "required": ["result"],
       "properties": {
-        "status": {"type": "string", "minLength": 1},
+        "result": {"$ref": "#/$defs/platformResult"},
         "evidence_refs": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}}
       }
     }
