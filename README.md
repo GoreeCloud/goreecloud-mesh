@@ -35,13 +35,15 @@ The native foundation provides:
 - A write scope is insufficient to impersonate another producer: the verified service identity must match the envelope producer.
 - Authentication proves the bound producer identity and granted Mesh scope; it does not prove the producer-domain assertion carried by an evidence envelope.
 - Expired evidence remains auditable but cannot satisfy current-evidence queries; normal expiry must not prevent restart.
-- Mandatory GoreeCloud Identity, Glaze UI, Wardveil Security, Privacy Shield, and Everkeep contracts remain release gates; this foundation does **not** claim Stable conformance.
+- Required GoreeCloud Manager, GoreeCloud Identity, Glaze UI, Wardveil Security, Privacy Shield, and Everkeep platform relationships or contracts remain release gates where applicable; this Development foundation does **not** claim Stable conformance.
 
 ## Integral platform authority model
 
-Mesh is the coordination authority among the six integral GoreeCloud platform systems. The other systems keep their own authority: GoreeCloud Identity for identity/authentication/authorization, Privacy Shield for privacy and data-use authority, Wardveil Security for security evaluation and protection, Everkeep for continuity/recovery/preservation, and Glaze UI for presentation and design conformance. Mesh may validate and transport bounded evidence from those systems but cannot manufacture or upgrade their domain truth.
+Mesh is the coordination authority within the seven-system GoreeCloud Integral Platform System model. GoreeCloud Manager remains the central administration and operational-management authority; GoreeCloud Identity remains the identity/authentication/authorization authority; Privacy Shield remains the privacy and data-use authority; Wardveil Security remains the security evaluation and protection authority; Everkeep remains the continuity/recovery/preservation authority; and Glaze UI remains the presentation and design-conformance authority. Mesh may coordinate relationships and validate or transport bounded evidence from applicable systems, but it cannot manufacture, transfer, or upgrade their domain truth.
 
-The platform evidence-plane contract is `contracts/mesh.platform-evidence-plane.v1.json`. It binds each producer to its canonical repository and producer-owned Mesh evidence profile while keeping `authority_transfer` false.
+The platform evidence-plane contract is `contracts/mesh.platform-evidence-plane.v1.json`. It binds each evidence producer to its canonical repository and producer-owned Mesh evidence profile while keeping `authority_transfer` false. GoreeCloud Manager is an administrative consumer/authority relationship rather than an evidence producer in that five-producer evidence-plane contract.
+
+The repository-root `goreecloud.platform.yaml` is the current platform-wide machine-readable declaration for Mesh under GoreeCloud Platform Contract v0.1. `docs/platform-conformance.json` remains supplemental Mesh-specific conformance evidence and acceptance detail; it must not compete with or silently weaken the root Platform Contract declaration.
 
 ## Run
 
