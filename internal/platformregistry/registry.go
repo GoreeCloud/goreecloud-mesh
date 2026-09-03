@@ -12,7 +12,8 @@ import (
 
 const Schema = "goreecloud.mesh.platform-record.v1"
 
-var revisionPattern = regexp.MustCompile(`^[a-fA-F0-9]{40,64}$`)
+var revisionPattern = regexp.MustCompile(`^[0-9a-f]{40}$`)
+var componentIDPattern = regexp.MustCompile(`^[a-z0-9]+(?:-[a-z0-9]+)*$`)
 
 type Source struct {
 	Repository            string `json:"repository"`
@@ -38,7 +39,7 @@ type Relationship struct {
 }
 
 type PlatformSystem struct {
-	Status       string   `json:"status"`
+	Result       string   `json:"result"`
 	EvidenceRefs []string `json:"evidence_refs,omitempty"`
 }
 
@@ -60,9 +61,14 @@ type Portability struct {
 }
 
 type Conformance struct {
-	OverallResult            string   `json:"overall_result"`
-	StableEligible           bool     `json:"stable_eligible"`
-	MissingMandatoryEvidence []string `json:"missing_mandatory_evidence,omitempty"`
+	DeclaredResult            string    `json:"declared_result"`
+	ComputedResult            string    `json:"computed_result"`
+	StableEligible            bool      `json:"stable_eligible"`
+	EvaluatorRepository       string    `json:"evaluator_repository"`
+	EvaluatorRevision         string    `json:"evaluator_revision"`
+	EvaluatedAt               time.Time `json:"evaluated_at"`
+	MissingMandatoryEvidence  []string  `json:"missing_mandatory_evidence,omitempty"`
+	Blockers                  []string  `json:"blockers,omitempty"`
 }
 
 type EvidenceRef struct {
@@ -108,13 +114,19 @@ func Validate(record Record) error {
 		return errors.New("source repository must exactly match component repository")
 	}
 	if !revisionPattern.MatchString(record.Source.Revision) {
-		return errors.New("source revision must be a 40-64 character hexadecimal immutable revision")
+		return errors.New("source revision must be an exact lowercase 40-character Git revision")
 	}
-	if record.Source.ContractSchemaVersion != "1.0" {
+	if record.Source.ContractSchemaVersion != "0.2" {
 		return fmt.Errorf("unsupported platform contract schema %q", record.Source.ContractSchemaVersion)
 	}
-	if strings.TrimSpace(record.Component.ID) == "" || strings.TrimSpace(record.Component.ProductName) == "" || strings.TrimSpace(record.Component.Kind) == "" || strings.TrimSpace(record.Component.Version) == "" {
-		return errors.New("component id, product_name, kind, and version are required")
+	if !componentIDPattern.MatchString(record.Component.ID) {
+		return fmt.Errorf("invalid component id %q", record.Component.ID)
+	}
+	if strings.TrimSpace(record.Component.ProductName) == "" || strings.TrimSpace(record.Component.Version) == "" {
+		return errors.New("component product_name and version are required")
+	}
+	if record.Component.Kind != "application" && record.Component.Kind != "service" {
+		return fmt.Errorf("invalid component kind %q", record.Component.Kind)
 	}
 	if !validLifecycle(record.Component.Lifecycle) {
 		return fmt.Errorf("invalid lifecycle %q", record.Component.Lifecycle)
@@ -125,14 +137,29 @@ func Validate(record Record) error {
 	if record.ObservedAt.IsZero() {
 		return errors.New("observed_at is required")
 	}
-	if record.Conformance.OverallResult != "conformant" && record.Conformance.OverallResult != "non-conformant" {
-		return fmt.Errorf("invalid conformance result %q", record.Conformance.OverallResult)
+	if !validConformance(record.Conformance.DeclaredResult) {
+		return fmt.Errorf("invalid declared conformance result %q", record.Conformance.DeclaredResult)
 	}
-	if record.Conformance.OverallResult != "conformant" && record.Conformance.StableEligible {
-		return errors.New("non-conformant records cannot be Stable-eligible")
+	if !validConformance(record.Conformance.ComputedResult) {
+		return fmt.Errorf("invalid computed conformance result %q", record.Conformance.ComputedResult)
 	}
-	if record.Component.Lifecycle == "Stable" && !record.Conformance.StableEligible {
-		return errors.New("Stable component record must carry current Stable eligibility")
+	if record.Conformance.EvaluatorRepository != "GoreeCloud/GoreeCloud" {
+		return errors.New("conformance evaluator repository must be GoreeCloud/GoreeCloud")
+	}
+	if !revisionPattern.MatchString(record.Conformance.EvaluatorRevision) {
+		return errors.New("conformance evaluator revision must be an exact lowercase 40-character Git revision")
+	}
+	if record.Conformance.EvaluatedAt.IsZero() {
+		return errors.New("conformance evaluated_at is required")
+	}
+	if record.Conformance.ComputedResult != "conformant" && record.Conformance.StableEligible {
+		return errors.New("nonconformant or unverified records cannot be Stable-eligible")
+	}
+	if record.Component.Lifecycle == "stable" && (record.Conformance.ComputedResult != "conformant" || !record.Conformance.StableEligible) {
+		return errors.New("stable component record must carry computed conformant state and current Stable eligibility")
+	}
+	if !validVerificationState(record.Recovery.BackupStatus) || !validVerificationState(record.Recovery.RestoreStatus) || !validVerificationState(record.Portability.ExportStatus) {
+		return errors.New("backup, restore, and export status must use approved verification-state vocabulary")
 	}
 	if record.Recovery.RestoreStatus == "verified" && record.Recovery.LastVerifiedRestore == nil {
 		return errors.New("verified restore requires last_verified_restore")
@@ -143,14 +170,17 @@ func Validate(record Record) error {
 	if err := validatePlatformSystems(record.PlatformSystems); err != nil {
 		return err
 	}
+	if err := validateDependencies(record.Component.ID, record.Dependencies); err != nil {
+		return err
+	}
 	if err := validateRelationships(record.Component.ID, record.Relationships); err != nil {
 		return err
 	}
 	if err := validateEvidence(record.EvidenceRefs); err != nil {
 		return err
 	}
-	if hasDuplicates(record.Capabilities) || hasDuplicates(record.Dependencies) || hasDuplicates(record.Conformance.MissingMandatoryEvidence) {
-		return errors.New("capabilities, dependencies, and missing evidence identifiers must be unique")
+	if hasDuplicates(record.Capabilities) || hasDuplicates(record.Dependencies) || hasDuplicates(record.Conformance.MissingMandatoryEvidence) || hasDuplicates(record.Conformance.Blockers) {
+		return errors.New("capabilities, dependencies, missing evidence identifiers, and blockers must be unique")
 	}
 	return nil
 }
@@ -221,7 +251,34 @@ func (r *Registry) Dependents(id string) []string {
 
 func validLifecycle(value string) bool {
 	switch value {
-	case "Concept", "Experimental", "Development", "Release Candidate", "Stable", "Deprecated", "Retired":
+	case "concept", "experimental", "development", "release-candidate", "stable", "deprecated", "retired":
+		return true
+	default:
+		return false
+	}
+}
+
+func validConformance(value string) bool {
+	switch value {
+	case "conformant", "nonconformant", "unverified":
+		return true
+	default:
+		return false
+	}
+}
+
+func validPlatformResult(value string) bool {
+	switch value {
+	case "applicable-conformant", "applicable-migration-required", "applicable-blocked", "applicable-nonconformant", "not-applicable-justified":
+		return true
+	default:
+		return false
+	}
+}
+
+func validVerificationState(value string) bool {
+	switch value {
+	case "verified", "implemented_unverified", "required_missing", "not_applicable", "unknown":
 		return true
 	default:
 		return false
@@ -230,13 +287,31 @@ func validLifecycle(value string) bool {
 
 func validatePlatformSystems(systems map[string]PlatformSystem) error {
 	required := []string{"manager", "identity", "wardveil_security", "privacy_shield", "everkeep", "mesh", "glaze_ui"}
+	if len(systems) != len(required) {
+		return errors.New("platform_systems must contain exactly the seven integral platform systems")
+	}
 	for _, name := range required {
 		value, ok := systems[name]
 		if !ok {
 			return fmt.Errorf("missing platform system evaluation %q", name)
 		}
-		if strings.TrimSpace(value.Status) == "" {
-			return fmt.Errorf("platform system %q status is required", name)
+		if !validPlatformResult(value.Result) {
+			return fmt.Errorf("platform system %q has invalid result %q", name, value.Result)
+		}
+		if hasDuplicates(value.EvidenceRefs) {
+			return fmt.Errorf("platform system %q evidence references must be unique", name)
+		}
+	}
+	return nil
+}
+
+func validateDependencies(componentID string, dependencies []string) error {
+	for _, dependency := range dependencies {
+		if !componentIDPattern.MatchString(strings.TrimSpace(dependency)) {
+			return fmt.Errorf("invalid dependency component id %q", dependency)
+		}
+		if dependency == componentID {
+			return errors.New("self dependencies are not allowed")
 		}
 	}
 	return nil
@@ -245,8 +320,8 @@ func validatePlatformSystems(systems map[string]PlatformSystem) error {
 func validateRelationships(componentID string, relationships []Relationship) error {
 	seen := map[string]struct{}{}
 	for _, relationship := range relationships {
-		if strings.TrimSpace(relationship.Target) == "" || strings.TrimSpace(relationship.Type) == "" {
-			return errors.New("relationship target and type are required")
+		if !componentIDPattern.MatchString(strings.TrimSpace(relationship.Target)) || strings.TrimSpace(relationship.Type) == "" {
+			return errors.New("relationship target must be a valid component id and relationship type is required")
 		}
 		if relationship.Target == componentID {
 			return errors.New("self relationships are not allowed")
@@ -279,6 +354,11 @@ func normalized(record Record) Record {
 	record.Dependencies = unique(record.Dependencies)
 	record.Component.SupportedPlatforms = unique(record.Component.SupportedPlatforms)
 	record.Conformance.MissingMandatoryEvidence = unique(record.Conformance.MissingMandatoryEvidence)
+	record.Conformance.Blockers = unique(record.Conformance.Blockers)
+	for key, value := range record.PlatformSystems {
+		value.EvidenceRefs = unique(value.EvidenceRefs)
+		record.PlatformSystems[key] = value
+	}
 	return record
 }
 
@@ -321,6 +401,7 @@ func clone(record Record) Record {
 	record.Relationships = append([]Relationship(nil), record.Relationships...)
 	record.Component.SupportedPlatforms = append([]string(nil), record.Component.SupportedPlatforms...)
 	record.Conformance.MissingMandatoryEvidence = append([]string(nil), record.Conformance.MissingMandatoryEvidence...)
+	record.Conformance.Blockers = append([]string(nil), record.Conformance.Blockers...)
 	record.EvidenceRefs = append([]EvidenceRef(nil), record.EvidenceRefs...)
 	if record.PlatformSystems != nil {
 		copySystems := make(map[string]PlatformSystem, len(record.PlatformSystems))
