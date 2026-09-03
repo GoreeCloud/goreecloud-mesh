@@ -1,133 +1,131 @@
-schema_version: "0.1"
-
+schema_version: '0.2'
 component:
   type: service
   id: goreecloud-mesh
   product_name: GoreeCloud Mesh
   repository: GoreeCloud/goreecloud-mesh
-
 lifecycle: development
-version: "0.3"
-
-supported_platforms: []
-
+version: '0.3'
+supported_platforms:
+- linux
 api:
   versions:
-    - v1
+  - v1
   endpoints:
-    - name: health
-      url: /healthz
-      purpose: Process-availability signal; not a complete production-readiness or dependency-health verdict.
-    - name: private-api
-      url: /v1/
-      purpose: Private-first service discovery, registry, graph, policy, platform-evidence, and coordination API namespace.
-    - name: evidence
-      url: /v1/evidence/envelopes
-      purpose: Authenticated bounded evidence inspection and delivery surface.
-
+  - name: health
+    url: /healthz
+    purpose: Process-availability signal; not a complete production-readiness or dependency-health verdict.
+  - name: private-api
+    url: /v1/
+    purpose: Private-first service discovery, registry, graph, policy, platform-evidence, and coordination API namespace.
+  - name: evidence
+    url: /v1/evidence/envelopes
+    purpose: Authenticated bounded evidence inspection and delivery surface.
 platform_systems:
   manager:
-    status: planned
+    result: applicable-blocked
     version: null
     evidence:
-      - README.md
+    - README.md
     notes: GoreeCloud Manager remains the central administration authority. A direct Manager-to-Mesh operational integration is planned and is not claimed as implemented here.
   privacy_shield:
-    status: partial
+    result: applicable-migration-required
     version: null
     evidence:
-      - docs/platform-conformance.json
-      - docs/privacy-everkeep.md
-    notes: Source-level privacy authority, minimization, retention, and evidence boundaries exist, while approved runtime Privacy Shield integration and acceptance remain pending.
+    - docs/platform-conformance.json
+    - docs/privacy-everkeep.md
+    notes: Source-level privacy authority, minimization, retention, and evidence boundaries exist, while approved runtime Privacy Shield integration and current-contract acceptance remain pending.
   wardveil_security:
-    status: partial
+    result: applicable-migration-required
     version: null
     evidence:
-      - docs/platform-conformance.json
-      - docs/identity-trust.md
-    notes: Source-level trust and fail-closed security boundaries exist, while approved Wardveil runtime adapter evidence and acceptance remain pending.
+    - docs/platform-conformance.json
+    - docs/identity-trust.md
+    notes: Source-level trust and fail-closed security boundaries exist, while approved Wardveil runtime adapter evidence and current-contract acceptance remain pending.
   everkeep:
-    status: partial
+    result: applicable-migration-required
     version: null
     evidence:
-      - docs/everkeep.adoption.json
-      - docs/everkeep.acceptance.json
-      - docs/platform-conformance.json
-    notes: Mesh has source-level continuity adoption and acceptance contracts, but production backup, export, restore, corruption recovery, and Everkeep acceptance remain pending.
+    - docs/everkeep.adoption.json
+    - docs/everkeep.acceptance.json
+    - docs/platform-conformance.json
+    notes: Mesh has source-level continuity adoption and acceptance contracts, but production backup, export, restore, corruption recovery, and current-contract Everkeep acceptance remain pending.
   glaze_ui:
-    status: partial
+    result: applicable-migration-required
     version: 2.2.0
     evidence:
-      - WEBSITE.md
-      - website/glaze.lock.json
-      - docs/platform-conformance.json
-    notes: The standalone public Mesh website is a pinned Glaze UI 2.2.0 Stable consumer; the administrative Mesh product interface and complete product-level Glaze acceptance remain unfinished.
+    - WEBSITE.md
+    - website/glaze.lock.json
+    - docs/platform-conformance.json
+    notes: The standalone public Mesh website declares a pinned Glaze UI 2.2.0 consumer state, while the current Platform Contract baseline is 1.1.0 and the administrative Mesh product interface plus complete product-level Glaze acceptance remain unfinished.
   mesh:
-    status: not-applicable
-    version: "0.3"
+    result: not-applicable-justified
+    version: '0.3'
     evidence:
-      - README.md
-      - docs/api.md
+    - README.md
+    - docs/api.md
     notes: This repository implements the GoreeCloud Mesh coordination authority itself; a separate Mesh-to-Mesh platform integration is not applicable.
     capabilities: []
     dependencies: []
     published_events: []
     consumed_events: []
   identity:
-    status: partial
+    result: applicable-migration-required
     version: null
     evidence:
-      - contracts/mesh.identity-verification.json
-      - docs/identity-trust.md
-      - docs/platform-conformance.json
-    notes: A source-level verifier and scoped service-identity trust boundary exist, while a deployed GoreeCloud Identity verifier and production credential mechanism remain pending.
-
+    - contracts/mesh.identity-verification.json
+    - docs/identity-trust.md
+    - docs/platform-conformance.json
+    notes: A source-level verifier and scoped service-identity trust boundary exist, while a deployed GoreeCloud Identity verifier, production credential mechanism, and current-contract acceptance remain pending.
 health:
   health_endpoint: /healthz
   readiness_endpoint: null
-
 continuity:
   backup:
     required: true
     requirements:
-      - Protect Mesh durable registry, relationship, source-attestation, runtime-evidence, evidence-envelope, and recovery-evidence state according to accepted Everkeep policy before production dependency.
+    - Protect Mesh durable registry, relationship, source-attestation, runtime-evidence, evidence-envelope, and recovery-evidence state according to accepted Everkeep policy before production dependency.
   restore:
     required: true
     requirements:
-      - Validate clean restoration, state integrity, API behavior, and accepted recovery evidence before production or Stable qualification.
+    - Validate clean restoration, state integrity, API behavior, and accepted recovery evidence before production or Stable qualification.
   export:
     required: true
     requirements:
-      - Keep Mesh coordination state and approved evidence records exportable in documented, independently recoverable forms.
+    - Keep Mesh coordination state and approved evidence records exportable in documented, independently recoverable forms.
   portability:
     required: true
     requirements:
-      - Preserve replaceable storage and documented contracts so Mesh does not become an unrecoverable dependency or proprietary data silo.
-
+    - Preserve replaceable storage and documented contracts so Mesh does not become an unrecoverable dependency or proprietary data silo.
 external_dependencies: []
-
 compatibility:
+  platform_contract: '0.2'
+  glaze_ui_required: 1.1.0
   requires:
-    - goreecloud-platform-contract=0.1
+  - goreecloud-platform-contract==0.2
+  - glaze-ui==1.1.0
   provides:
-    - mesh-api-v1
-
+  - mesh-api-v1
+evidence:
+  acceptance_tests: []
+  release: []
 conformance:
-  status: partial
+  status: nonconformant
   validated_at: null
   evidence:
-    - README.md
-    - docs/api.md
-    - docs/platform-conformance.json
-    - contracts/mesh.platform-evidence-plane.v1.json
-    - contracts/mesh.identity-verification.json
-    - WEBSITE.md
+  - README.md
+  - docs/api.md
+  - docs/platform-conformance.json
+  - contracts/mesh.platform-evidence-plane.v1.json
+  - contracts/mesh.identity-verification.json
+  - WEBSITE.md
   blockers:
-    - GoreeCloud Mesh remains in Development and is not production or Stable accepted.
-    - Direct GoreeCloud Manager integration remains planned.
-    - A deployed GoreeCloud Identity verifier and production authorization path remain pending.
-    - Wardveil Security and Privacy Shield runtime adapter evidence and acceptance remain pending.
-    - Everkeep production backup, export, restore, and recovery acceptance remain pending.
-    - The administrative Mesh product interface and product-level Glaze UI acceptance remain incomplete.
-    - Production Monitoring, Gateway, and Network adapters remain pending.
-    - Target-environment runtime, rollback, failure-mode, publication, and production acceptance remain pending.
+  - GoreeCloud Mesh remains in Development and is not production or Stable accepted.
+  - Direct GoreeCloud Manager integration remains planned.
+  - A deployed GoreeCloud Identity verifier and production authorization path remain pending.
+  - Wardveil Security and Privacy Shield runtime adapter evidence and acceptance remain pending.
+  - Everkeep production backup, export, restore, and recovery acceptance remain pending.
+  - The administrative Mesh product interface and product-level Glaze UI acceptance remain incomplete.
+  - Current Platform Contract Glaze UI baseline reconciliation and acceptance remain incomplete.
+  - Production Monitoring, Gateway, and Network adapters remain pending.
+  - Target-environment runtime, rollback, failure-mode, publication, and production acceptance remain pending.
