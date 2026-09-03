@@ -1,11 +1,25 @@
 {
-  "schema_version": "1.2.0",
+  "schema_version": "1.3.0",
   "contract": "goreecloud.platform-evidence-plane.v1",
   "authority": "coordination-only",
   "authority_transfer": false,
   "runtime_acceptance_implied": false,
   "stable_acceptance_implied": false,
   "mesh_envelope": "contracts/mesh.evidence-envelope.schema.json",
+  "platform_contract": {
+    "manifest_schema": "GoreeCloud/GoreeCloud:schemas/goreecloud.platform.schema.json@0.2",
+    "conformance_result_schema": "GoreeCloud/GoreeCloud:schemas/goreecloud.conformance-result.schema.json@0.1",
+    "aggregation_role": "read-only",
+    "authority_transfer": false,
+    "declaration_owner_required": true,
+    "exact_revision_required": true,
+    "record_types": [
+      "repository-platform-declaration",
+      "computed-platform-conformance",
+      "producer-evidence-reference"
+    ],
+    "notes": "Mesh may correlate platform declarations, computed conformance results, relationships, capabilities, dependencies, and producer evidence references. The repository and producer systems remain authoritative for the facts they own."
+  },
   "producer_delivery_transport": {
     "https_required_except_loopback": true,
     "redirects_permitted_with_service_identity": false,
@@ -15,28 +29,62 @@
   },
   "systems": [
     {
-      "system": "wardveil-security",
-      "repository": "GoreeCloud/goreecloud-wardveil-security",
-      "profile": "contracts/wardveil.mesh-evidence-profile.json",
-      "authority_domains": ["security"]
+      "system": "goreecloud-manager",
+      "repository": "GoreeCloud/goreecloud-manager",
+      "profile": "goreecloud.platform.yaml",
+      "authority_domains": [
+        "management",
+        "inventory",
+        "lifecycle",
+        "operational-visibility"
+      ]
     },
     {
       "system": "privacy-shield",
       "repository": "GoreeCloud/goreecloud-privacy-shield",
       "profile": "contracts/privacy-shield.mesh-evidence-profile.json",
-      "authority_domains": ["privacy"]
+      "authority_domains": [
+        "privacy"
+      ]
+    },
+    {
+      "system": "wardveil-security",
+      "repository": "GoreeCloud/goreecloud-wardveil-security",
+      "profile": "contracts/wardveil.mesh-evidence-profile.json",
+      "authority_domains": [
+        "security"
+      ]
     },
     {
       "system": "everkeep",
       "repository": "GoreeCloud/goreecloud-everkeep",
       "profile": "contracts/everkeep.mesh-evidence-profile.json",
-      "authority_domains": ["resilience", "recovery", "preservation", "continuity"]
+      "authority_domains": [
+        "resilience",
+        "recovery",
+        "preservation",
+        "continuity"
+      ]
     },
     {
       "system": "glaze-ui",
       "repository": "GoreeCloud/goreecloud-glaze-ui",
       "profile": "contracts/glaze.mesh-evidence-profile.json",
-      "authority_domains": ["presentation", "design-conformance"]
+      "authority_domains": [
+        "presentation",
+        "design-conformance"
+      ]
+    },
+    {
+      "system": "goreecloud-mesh",
+      "repository": "GoreeCloud/goreecloud-mesh",
+      "profile": "contracts/mesh.platform-evidence-plane.v1.json",
+      "authority_domains": [
+        "coordination",
+        "relationship",
+        "capability-discovery",
+        "evidence-transport"
+      ]
     },
     {
       "system": "goreecloud-identity",
@@ -56,8 +104,10 @@
   ],
   "invariants": [
     "Each producer remains authoritative only for its declared domain.",
+    "Repository platform declarations remain authoritative to the repository that owns them; Mesh may aggregate but cannot upgrade them.",
+    "Computed platform conformance results remain attributable to the exact repository revision and Platform Contract evaluator revision that produced them.",
     "Mesh validates transport, provenance, freshness, minimization, and coordination metadata without creating producer-domain truth.",
-    "A structurally valid envelope never upgrades a producer outcome or implies Stable acceptance.",
+    "A structurally valid declaration, conformance result, or evidence envelope never upgrades a producer outcome or implies Stable acceptance.",
     "Expired evidence remains auditable but cannot satisfy a current-evidence view.",
     "Raw user content, credentials, keys, tokens, and secret material are prohibited from platform evidence envelopes.",
     "Producer delivery clients must reject redirects while carrying GoreeCloud Identity service proofs.",
@@ -65,6 +115,7 @@
     "GoreeCloud Identity remains authoritative for identity, authentication, platform authorization, accounts, devices, credentials, sessions, and delegated authority; Mesh cannot mint or upgrade that authority.",
     "An Identity-authenticated producer proves who delivered an envelope and its granted Mesh scope; it does not prove the producer-domain assertion contained in that envelope.",
     "Glaze UI may present evidence but cannot manufacture security, privacy, recovery, continuity, identity, authentication, authorization, or coordination claims.",
+    "GoreeCloud Manager may present aggregated platform state but does not become authoritative for producer-owned security, privacy, recovery, identity, design, or coordination facts merely by displaying them.",
     "Cross-domain summaries must preserve authority identity and must not collapse independent domains into a generic safe or protected verdict."
   ],
   "status": "development",
