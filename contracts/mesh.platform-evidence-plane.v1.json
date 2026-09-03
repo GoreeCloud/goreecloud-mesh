@@ -8,7 +8,7 @@
   "mesh_envelope": "contracts/mesh.evidence-envelope.schema.json",
   "platform_contract": {
     "manifest_schema": "GoreeCloud/GoreeCloud:schemas/goreecloud.platform.schema.json@0.2",
-    "conformance_result_schema": "GoreeCloud/GoreeCloud:schemas/goreecloud.conformance-result.schema.json@0.1",
+    "conformance_result_schema": "GoreeCloud/GoreeCloud:schemas/goreecloud.conformance-result.schema.json@0.2",
     "aggregation_role": "read-only",
     "authority_transfer": false,
     "declaration_owner_required": true,
