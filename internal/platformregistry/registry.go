@@ -61,14 +61,14 @@ type Portability struct {
 }
 
 type Conformance struct {
-	DeclaredResult            string    `json:"declared_result"`
-	ComputedResult            string    `json:"computed_result"`
-	StableEligible            bool      `json:"stable_eligible"`
-	EvaluatorRepository       string    `json:"evaluator_repository"`
-	EvaluatorRevision         string    `json:"evaluator_revision"`
-	EvaluatedAt               time.Time `json:"evaluated_at"`
-	MissingMandatoryEvidence  []string  `json:"missing_mandatory_evidence,omitempty"`
-	Blockers                  []string  `json:"blockers,omitempty"`
+	DeclaredResult           string    `json:"declared_result"`
+	ComputedResult           string    `json:"computed_result"`
+	StableEligible           bool      `json:"stable_eligible"`
+	EvaluatorRepository      string    `json:"evaluator_repository"`
+	EvaluatorRevision        string    `json:"evaluator_revision"`
+	EvaluatedAt              time.Time `json:"evaluated_at"`
+	MissingMandatoryEvidence []string  `json:"missing_mandatory_evidence,omitempty"`
+	Blockers                 []string  `json:"blockers,omitempty"`
 }
 
 type EvidenceRef struct {
