@@ -1,7 +1,7 @@
 package contracts
 
-// CatalogEntry describes one mandatory integral GoreeCloud platform system
-// without transferring that system's authority into Mesh.
+// CatalogEntry describes one mandatory Integral Platform System without
+// transferring that system's authority into GoreeCloud Mesh.
 type CatalogEntry struct {
 	Platform            Platform `json:"platform"`
 	DisplayName         string   `json:"display_name"`
@@ -14,11 +14,20 @@ type CatalogEntry struct {
 
 var catalog = []CatalogEntry{
 	{
-		Platform:            GlazeUI,
-		DisplayName:         "Glaze UI",
-		Repository:          "GoreeCloud/glaze-ui",
-		Authority:           "design, interaction, accessibility, adaptive behavior, and visual presentation",
-		ContractSource:      "CONFORMANCE.md",
+		Platform:            Manager,
+		DisplayName:         "GoreeCloud Manager",
+		Repository:          "GoreeCloud/goreecloud-manager",
+		Authority:           "bounded platform management, inventory, lifecycle, operational visibility, and management-plane state",
+		ContractSource:      "goreecloud.platform.yaml",
+		IntegrationManifest: "goreecloud.platform.yaml",
+		Required:            true,
+	},
+	{
+		Platform:            PrivacyShield,
+		DisplayName:         "Privacy Shield",
+		Repository:          "GoreeCloud/goreecloud-privacy-shield",
+		Authority:           "privacy controls, privacy status, data minimization, retention expectations, and privacy capability governance",
+		ContractSource:      "contracts/privacy-shield.platform.json",
 		IntegrationManifest: "contracts/mesh.integration.json",
 		Required:            true,
 	},
@@ -32,21 +41,39 @@ var catalog = []CatalogEntry{
 		Required:            true,
 	},
 	{
-		Platform:            PrivacyShield,
-		DisplayName:         "GoreeCloud Privacy Shield",
-		Repository:          "GoreeCloud/goreecloud-privacy-shield",
-		Authority:           "privacy controls, privacy status, data minimization, retention expectations, and privacy capability governance",
-		ContractSource:      "contracts/privacy-shield.platform.json",
-		IntegrationManifest: "contracts/mesh.integration.json",
-		Required:            true,
-	},
-	{
 		Platform:            Everkeep,
 		DisplayName:         "Everkeep",
 		Repository:          "GoreeCloud/goreecloud-everkeep",
 		Authority:           "resilience, recovery, preservation, portability, succession, and digital-legacy evidence",
 		ContractSource:      "contracts/continuity.status.schema.json",
 		IntegrationManifest: "contracts/mesh.integration.json",
+		Required:            true,
+	},
+	{
+		Platform:            GlazeUI,
+		DisplayName:         "Glaze UI",
+		Repository:          "GoreeCloud/goreecloud-glaze-ui",
+		Authority:           "design, interaction, accessibility, adaptive behavior, and visual presentation",
+		ContractSource:      "CONFORMANCE.md",
+		IntegrationManifest: "contracts/mesh.integration.json",
+		Required:            true,
+	},
+	{
+		Platform:            Mesh,
+		DisplayName:         "GoreeCloud Mesh",
+		Repository:          "GoreeCloud/goreecloud-mesh",
+		Authority:           "bounded first-party discovery, coordination, relationship, evidence-transport, and event/capability exchange state",
+		ContractSource:      "contracts/mesh.platform-evidence-plane.v1.json",
+		IntegrationManifest: "goreecloud.platform.yaml",
+		Required:            true,
+	},
+	{
+		Platform:            Identity,
+		DisplayName:         "GoreeCloud Identity",
+		Repository:          "GoreeCloud/goreecloud-identity",
+		Authority:           "identity, authentication, authorization, accounts, devices, credentials, sessions, service identity, and delegated authority",
+		ContractSource:      "contracts/identity.mesh-evidence-profile.json",
+		IntegrationManifest: "contracts/identity.mesh-evidence-profile.json",
 		Required:            true,
 	},
 }
