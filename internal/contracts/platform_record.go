@@ -10,9 +10,9 @@ import (
 )
 
 const (
-	PlatformManifestSchemaVersion  = "0.2"
-	PlatformResultSchemaVersion    = "0.2"
-	PlatformEvaluatorRepository    = "GoreeCloud/GoreeCloud"
+	PlatformManifestSchemaVersion   = "0.2"
+	PlatformResultSchemaVersion     = "0.2"
+	PlatformEvaluatorRepository     = "GoreeCloud/GoreeCloud"
 	PlatformAggregationRoleReadOnly = "read-only"
 )
 
@@ -20,27 +20,27 @@ var platformComponentIDPattern = regexp.MustCompile(`^[a-z0-9]+(?:-[a-z0-9]+)*$`
 var platformRepositoryPattern = regexp.MustCompile(`^GoreeCloud/[A-Za-z0-9._-]+$`)
 
 var platformLifecycleValues = map[string]struct{}{
-	"concept": {},
-	"experimental": {},
-	"development": {},
+	"concept":           {},
+	"experimental":      {},
+	"development":       {},
 	"release-candidate": {},
-	"stable": {},
-	"deprecated": {},
-	"retired": {},
+	"stable":            {},
+	"deprecated":        {},
+	"retired":           {},
 }
 
 var platformConformanceValues = map[string]struct{}{
-	"conformant": {},
+	"conformant":    {},
 	"nonconformant": {},
-	"unverified": {},
+	"unverified":    {},
 }
 
 var platformSystemResultValues = map[string]struct{}{
-	"applicable-conformant": {},
+	"applicable-conformant":         {},
 	"applicable-migration-required": {},
-	"applicable-blocked": {},
-	"applicable-nonconformant": {},
-	"not-applicable-justified": {},
+	"applicable-blocked":            {},
+	"applicable-nonconformant":      {},
+	"not-applicable-justified":      {},
 }
 
 var platformSystemKeys = []string{
@@ -98,6 +98,7 @@ type PlatformRecord struct {
 
 type PlatformRecordRegistry struct {
 	mu      sync.RWMutex
+	path    string
 	records map[string]PlatformRecord
 }
 
@@ -288,8 +289,19 @@ func (r *PlatformRecordRegistry) Record(v PlatformRecord) (PlatformRecord, error
 	if err != nil {
 		return PlatformRecord{}, err
 	}
+
 	r.mu.Lock()
+	previous, hadPrevious := r.records[normalized.ComponentID]
 	r.records[normalized.ComponentID] = copyPlatformRecord(normalized)
+	if err := r.persistLocked(); err != nil {
+		if hadPrevious {
+			r.records[normalized.ComponentID] = previous
+		} else {
+			delete(r.records, normalized.ComponentID)
+		}
+		r.mu.Unlock()
+		return PlatformRecord{}, err
+	}
 	r.mu.Unlock()
 	return copyPlatformRecord(normalized), nil
 }
