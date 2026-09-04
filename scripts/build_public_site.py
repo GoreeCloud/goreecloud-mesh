@@ -22,7 +22,7 @@ if LOCK.get("entrypoint") != "css/glaze-v1.1.0.css":
 
 def git_blob_sha(data: bytes) -> str:
     prefix = b"blob " + str(len(data)).encode("ascii") + b"\0"
-    return hashlib.sha1(prefix + data, usedforsecurity=False).hexdigest()
+    return hashlib.sha1(prefix + data).hexdigest()
 
 def require_file(path: Path) -> Path:
     if not path.is_file() or path.is_symlink():
