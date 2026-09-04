@@ -6,7 +6,7 @@ The Mesh Platform Registry is the normalized read model for GoreeCloud platform 
 
 Each component owns `goreecloud.platform.yaml` in its canonical repository. Repository CI validates that declaration against a pinned immutable revision of the canonical Platform Contract in `GoreeCloud/GoreeCloud` and computes a revision-bound conformance result.
 
-Mesh records a minimized normalized representation using `contracts/mesh.platform-record.v1.schema.json`. Platform Record v1 now consumes the current Platform Contract v0.2 vocabulary. Every record carries:
+Mesh records a minimized normalized representation using `contracts/mesh.platform-record.v1.schema.json`. Platform Record v1 consumes the current Platform Contract v0.2 vocabulary. Every record carries:
 
 - the producer repository and exact 40-character producer revision;
 - Platform Contract schema `0.2`;
@@ -26,9 +26,54 @@ Mesh records a minimized normalized representation using `contracts/mesh.platfor
 
 Mesh never upgrades producer truth. A valid transport or registry record does not itself prove that a component is secure, privacy-compliant, recoverable, accessible, healthy, Glaze-conformant, Identity-integrated, or Stable-eligible. Those assertions remain owned by their authoritative producers and acceptance evidence.
 
-The registry rejects records that request authority transfer, whose source repository does not exactly match the component repository, whose source revision is not an exact Git revision, whose Platform Contract vocabulary is not v0.2, whose evaluator provenance is not bound to `GoreeCloud/GoreeCloud`, or that label a non-conformant/unverified record Stable-eligible.
+The registry rejects records that request authority transfer, whose source repository does not exactly match the component repository, whose source revision is not an exact Git revision, whose Platform Contract vocabulary is not v0.2, whose evaluator provenance is not bound to `GoreeCloud/GoreeCloud`, or that label a nonconformant/unverified record Stable-eligible.
 
-Mesh also rejects unknown Platform System result vocabulary instead of silently accepting display labels or legacy states. This keeps coordination records machine-comparable with the canonical contract without transferring authority to Mesh.
+Mesh rejects unknown Platform System result vocabulary instead of silently accepting display labels or legacy states. This keeps coordination records machine-comparable with the canonical contract without transferring authority to Mesh.
+
+Authenticated writes add a transport identity binding without transferring authority. The verified GoreeCloud Identity service principal must have `mesh.platform-registry.write`, and its `service_id` must exactly match the record's `component.id`. This prevents one scoped component from overwriting another component's platform declaration. Authentication proves who delivered the record; it does not independently prove the producer-domain assertions inside the record.
+
+## Monotonic update and replay boundary
+
+An authenticated producer may retry the exact same record idempotently, but it may not move accepted platform state backward.
+
+Mesh keeps two independent monotonic clocks for each component:
+
+- producer-domain facts are bound to `observed_at`; and
+- canonical conformance facts are bound to `conformance.evaluated_at`.
+
+An update is rejected when either timestamp is older than the currently stored value. Producer-owned state changes require a strictly newer `observed_at`. Canonical conformance changes require a strictly newer `evaluated_at`. This means the canonical evaluator can legitimately publish a later evaluation for the same producer observation, and a producer can publish a newer runtime/health observation without manufacturing a new canonical evaluation.
+
+A same-time mutation that changes producer or conformance content is rejected rather than being treated as an idempotent retry. The authenticated HTTP API returns `409 Conflict` for these regressive or ambiguous updates and leaves the stored record unchanged.
+
+This is a registry ordering rule, not a truth upgrade. Newer evidence may still be blocked, nonconformant, unhealthy, unverified, or otherwise unfavorable and must be preserved exactly as supplied by the appropriate authority.
+
+## Durable state
+
+`internal/platformregistry.NewPersistent` stores the normalized registry in `goreecloud.mesh.platform-registry-state.v1` JSON. The runtime default is `./mesh-platform-registry.json`; an empty `--platform-registry` path keeps the registry in memory.
+
+Durable state is fail-closed:
+
+- the state file must be a regular non-symlink file;
+- existing state must not be accessible to group or other users;
+- files are atomically replaced with mode `0600`;
+- persisted records are revalidated on load;
+- duplicate component IDs and unsupported state schemas are rejected; and
+- state size is bounded.
+
+Only normalized coordination metadata is stored. Credentials, bearer tokens, private keys, application payloads, raw user activity, browsing history, DNS history, and other producer-private data do not belong in this state file.
+
+## Authenticated HTTP API
+
+The private-first `/v1/` API exposes:
+
+- `GET /v1/platform-registry` — list normalized records; requires `mesh.platform-registry.read`;
+- `POST /v1/platform-registry` — validate and persist a producer-bound, monotonic record; requires `mesh.platform-registry.write` and exact service/component identity binding;
+- `GET /v1/platform-registry/{id}` — read one record; requires `mesh.platform-registry.read`; and
+- `GET /v1/platform-registry/{id}/dependents` — compute direct and transitive dependents from declared dependencies/required relationships; requires `mesh.platform-registry.read`.
+
+When no GoreeCloud Identity verifier is configured, all of these endpoints fail closed with authentication unavailable. The Mesh process remains loopback-only by default; adding these source-level endpoints does not authorize public or production exposure.
+
+The read scope is intentionally distinct from write scope so Manager and other authorized consumers can aggregate platform state without gaining producer-write authority.
 
 ## Recovery semantics
 
@@ -48,4 +93,4 @@ The registry computes dependents only from explicitly declared dependencies and 
 
 ## Current implementation boundary
 
-`internal/platformregistry` provides validated in-memory aggregation and dependency-impact queries. The durable authenticated API is developed separately and must preserve this exact producer/evaluator provenance model when records are persisted or exposed. Runtime publication, accepted producer evidence, Manager consumption, and production approval remain independently gated.
+The stacked platform-registry API candidate provides validated aggregation, owner-only atomic JSON persistence, authenticated/scoped ingestion, replay-safe monotonic updates, authenticated reads, and dependency-impact queries on top of the v0.2 record contract. It does **not** establish deployed GoreeCloud Identity acceptance, Wardveil runtime acceptance, Privacy Shield runtime acceptance, Everkeep backup/restore acceptance, production publication, Manager consumption, release acceptance, or Stable qualification. Those remain separate evidence-backed gates.

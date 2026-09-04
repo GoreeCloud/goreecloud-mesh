@@ -9,14 +9,16 @@ import (
 )
 
 const (
-	ScopeServicesWrite      = "mesh.services.write"
-	ScopeRelationshipsWrite = "mesh.relationships.write"
-	ScopePolicyEvaluate     = "mesh.policy.evaluate"
-	ScopeAttestationsWrite  = "mesh.attestations.write"
-	ScopeContractsWrite     = "mesh.contracts.write"
-	ScopeEvidenceRead       = "mesh.evidence.read"
-	ScopeEvidenceWrite      = "mesh.evidence.write"
-	ScopeRecoveryWrite      = "mesh.everkeep.recovery.write"
+	ScopeServicesWrite         = "mesh.services.write"
+	ScopeRelationshipsWrite    = "mesh.relationships.write"
+	ScopePolicyEvaluate        = "mesh.policy.evaluate"
+	ScopeAttestationsWrite     = "mesh.attestations.write"
+	ScopeContractsWrite        = "mesh.contracts.write"
+	ScopeEvidenceRead          = "mesh.evidence.read"
+	ScopeEvidenceWrite         = "mesh.evidence.write"
+	ScopeRecoveryWrite         = "mesh.everkeep.recovery.write"
+	ScopePlatformRegistryRead  = "mesh.platform-registry.read"
+	ScopePlatformRegistryWrite = "mesh.platform-registry.write"
 
 	TrustedIdentityIssuer = "goreecloud-identity"
 )
