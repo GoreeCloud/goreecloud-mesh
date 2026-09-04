@@ -32,6 +32,21 @@ Mesh rejects unknown Platform System result vocabulary instead of silently accep
 
 Authenticated writes add a transport identity binding without transferring authority. The verified GoreeCloud Identity service principal must have `mesh.platform-registry.write`, and its `service_id` must exactly match the record's `component.id`. This prevents one scoped component from overwriting another component's platform declaration. Authentication proves who delivered the record; it does not independently prove the producer-domain assertions inside the record.
 
+## Monotonic update and replay boundary
+
+An authenticated producer may retry the exact same record idempotently, but it may not move accepted platform state backward.
+
+Mesh keeps two independent monotonic clocks for each component:
+
+- producer-domain facts are bound to `observed_at`; and
+- canonical conformance facts are bound to `conformance.evaluated_at`.
+
+An update is rejected when either timestamp is older than the currently stored value. Producer-owned state changes require a strictly newer `observed_at`. Canonical conformance changes require a strictly newer `evaluated_at`. This means the canonical evaluator can legitimately publish a later evaluation for the same producer observation, and a producer can publish a newer runtime/health observation without manufacturing a new canonical evaluation.
+
+A same-time mutation that changes producer or conformance content is rejected rather than being treated as an idempotent retry. The authenticated HTTP API returns `409 Conflict` for these regressive or ambiguous updates and leaves the stored record unchanged.
+
+This is a registry ordering rule, not a truth upgrade. Newer evidence may still be blocked, nonconformant, unhealthy, unverified, or otherwise unfavorable and must be preserved exactly as supplied by the appropriate authority.
+
 ## Durable state
 
 `internal/platformregistry.NewPersistent` stores the normalized registry in `goreecloud.mesh.platform-registry-state.v1` JSON. The runtime default is `./mesh-platform-registry.json`; an empty `--platform-registry` path keeps the registry in memory.
@@ -52,7 +67,7 @@ Only normalized coordination metadata is stored. Credentials, bearer tokens, pri
 The private-first `/v1/` API exposes:
 
 - `GET /v1/platform-registry` — list normalized records; requires `mesh.platform-registry.read`;
-- `POST /v1/platform-registry` — validate and persist a producer-bound record; requires `mesh.platform-registry.write` and exact service/component identity binding;
+- `POST /v1/platform-registry` — validate and persist a producer-bound, monotonic record; requires `mesh.platform-registry.write` and exact service/component identity binding;
 - `GET /v1/platform-registry/{id}` — read one record; requires `mesh.platform-registry.read`; and
 - `GET /v1/platform-registry/{id}/dependents` — compute direct and transitive dependents from declared dependencies/required relationships; requires `mesh.platform-registry.read`.
 
@@ -78,4 +93,4 @@ The registry computes dependents only from explicitly declared dependencies and 
 
 ## Current implementation boundary
 
-The stacked platform-registry API candidate provides validated aggregation, owner-only atomic JSON persistence, authenticated/scoped ingestion, authenticated reads, and dependency-impact queries on top of the v0.2 record contract. It does **not** establish deployed GoreeCloud Identity acceptance, Wardveil runtime acceptance, Privacy Shield runtime acceptance, Everkeep backup/restore acceptance, production publication, Manager consumption, release acceptance, or Stable qualification. Those remain separate evidence-backed gates.
+The stacked platform-registry API candidate provides validated aggregation, owner-only atomic JSON persistence, authenticated/scoped ingestion, replay-safe monotonic updates, authenticated reads, and dependency-impact queries on top of the v0.2 record contract. It does **not** establish deployed GoreeCloud Identity acceptance, Wardveil runtime acceptance, Privacy Shield runtime acceptance, Everkeep backup/restore acceptance, production publication, Manager consumption, release acceptance, or Stable qualification. Those remain separate evidence-backed gates.
