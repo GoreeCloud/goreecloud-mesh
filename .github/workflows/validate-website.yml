@@ -1,4 +1,4 @@
-name: Validate public website
+name: Validate Mesh Center GLAZE UI V1.1 Stable
 
 on:
   pull_request:
@@ -34,11 +34,15 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
           persist-credentials: false
-      - name: Check out pinned Glaze UI 2.2.0 Stable source
+      - name: Verify exact website candidate
+        env:
+          EXPECTED_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
+      - name: Check out pinned GLAZE UI V1.1 Stable source
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           repository: GoreeCloud/goreecloud-glaze-ui
-          ref: 6731098b28dd0393faa878c70d989a221d714a20
+          ref: 15cc76d2bcd4065552dc31c77145b63f34d9e7b2
           path: .glaze-ui
           persist-credentials: false
       - name: Compile website tools
