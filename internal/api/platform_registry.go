@@ -65,6 +65,16 @@ func (a *platformRegistryAPI) record(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusForbidden, errors.New("authenticated service identity must match platform record component id"))
 		return
 	}
+	if err := platformregistry.Validate(record); err != nil {
+		writeError(w, http.StatusBadRequest, err)
+		return
+	}
+	if current, exists := a.registry.Get(record.Component.ID); exists {
+		if err := platformregistry.ValidateUpdate(current, record); err != nil {
+			writeError(w, http.StatusConflict, err)
+			return
+		}
+	}
 	if err := a.registry.Upsert(record); err != nil {
 		writeError(w, http.StatusBadRequest, err)
 		return
