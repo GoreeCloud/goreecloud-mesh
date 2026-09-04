@@ -34,7 +34,7 @@ jobs:
       - name: Commit vendored source when changed
         shell: bash
         run: |
-          if git diff --quiet -- website/glaze; then
+          if [[ -z "$(git status --porcelain -- website/glaze)" ]]; then
             echo 'Vendored source already matches the immutable lock.'
             exit 0
           fi
