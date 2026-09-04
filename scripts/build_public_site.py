@@ -11,7 +11,7 @@ SOURCE = ROOT / "website"
 DIST = ROOT / "dist"
 LOCK = json.loads((SOURCE / "glaze.lock.json").read_text(encoding="utf-8"))
 PUBLIC_FILES = ("index.html", "404.html", "_headers", "robots.txt")
-LOCAL_ASSETS = ("site.css", "site.js")
+LOCAL_ASSETS = ("mesh-theme.css", "site.css", "site.js")
 
 if LOCK.get("version") != "1.1.0" or LOCK.get("product") != "GLAZE UI V1.1":
     raise SystemExit("Glaze consumer lock must target GLAZE UI V1.1 / 1.1.0 Stable")
