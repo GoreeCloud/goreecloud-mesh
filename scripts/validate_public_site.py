@@ -32,14 +32,17 @@ EXPECTED_FILES = {
     "css/glaze-v1.optical-reachability.css": "6123cff22f06b4c537156a1285e2664763f33316",
 }
 
+
 def check(condition: bool, message: str) -> None:
     if not condition:
         errors.append(message)
+
 
 def blob_sha(path: Path) -> str:
     data = path.read_bytes()
     prefix = b"blob " + str(len(data)).encode("ascii") + b"\0"
     return hashlib.sha1(prefix + data, usedforsecurity=False).hexdigest()
+
 
 class PublicHtmlAudit(HTMLParser):
     def handle_starttag(self, tag, attrs):
@@ -61,6 +64,7 @@ class PublicHtmlAudit(HTMLParser):
         if tag == "a" and values.get("href", "").startswith("http://"):
             errors.append(f"external navigation must use HTTPS: {values.get('href')}")
 
+
 lock = json.loads((SOURCE / "glaze.lock.json").read_text(encoding="utf-8"))
 check(lock.get("schema") == "goreecloud.glaze-ui.web-source-manifest.v1", "unexpected Glaze lock schema")
 check(lock.get("product") == "GLAZE UI V1.1", "Glaze product must be GLAZE UI V1.1")
@@ -70,6 +74,25 @@ check(lock.get("release_commit") == EXPECTED_RELEASE, "Glaze Stable release comm
 check(lock.get("entrypoint") == "css/glaze-v1.1.0.css", "Glaze Stable entrypoint must be pinned")
 check(lock.get("runtime_network_dependency_required") is False, "runtime Glaze network dependency must remain disabled")
 check(lock.get("files") == EXPECTED_FILES, "Glaze V1.1 source graph must match the canonical Stable lock exactly")
+
+vendor_dir = SOURCE / "glaze"
+check(vendor_dir.is_dir(), "committed local Glaze vendor directory missing")
+if vendor_dir.is_dir():
+    expected_vendor_names = {Path(path).name for path in EXPECTED_FILES}
+    actual_vendor_names = {path.name for path in vendor_dir.iterdir() if path.is_file() and not path.is_symlink()}
+    check(
+        actual_vendor_names == expected_vendor_names,
+        "committed local Glaze vendor set must match the canonical Stable lock exactly",
+    )
+    for upstream_path, expected_sha in EXPECTED_FILES.items():
+        vendor_path = vendor_dir / Path(upstream_path).name
+        safe_vendor_file = vendor_path.is_file() and not vendor_path.is_symlink()
+        check(safe_vendor_file, f"missing or unsafe committed Glaze source: {upstream_path}")
+        if safe_vendor_file:
+            check(
+                blob_sha(vendor_path) == expected_sha,
+                f"committed Glaze source integrity mismatch: {upstream_path}",
+            )
 
 html = (BASE / "index.html").read_text(encoding="utf-8")
 not_found = (BASE / "404.html").read_text(encoding="utf-8")
