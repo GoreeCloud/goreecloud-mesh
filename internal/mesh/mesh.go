@@ -42,10 +42,21 @@ func (m *Mesh) RegisterService(v model.Service) (model.Service, error) {
 	v.Capabilities = unique(v.Capabilities)
 	v.Dependencies = unique(v.Dependencies)
 	v.UpdatedAt = time.Now().UTC()
+	event, err := newEvent(
+		m.seq.Add(1),
+		EventServiceUpsertedV1,
+		v.ID,
+		v.ID,
+		map[string]any{"health": string(v.Health)},
+		v.UpdatedAt,
+	)
+	if err != nil {
+		return model.Service{}, fmt.Errorf("build service lifecycle event: %w", err)
+	}
 	if err := m.store.PutService(v); err != nil {
 		return model.Service{}, err
 	}
-	m.publish("mesh.service.upserted", v.ID, v.ID, map[string]any{"health": v.Health})
+	m.dispatch(event)
 	return v, nil
 }
 
@@ -96,10 +107,21 @@ func (m *Mesh) AddRelationship(r model.Relationship) (model.Relationship, error)
 		return model.Relationship{}, fmt.Errorf("target service %q is not registered", r.To)
 	}
 	r.UpdatedAt = time.Now().UTC()
+	event, err := newEvent(
+		m.seq.Add(1),
+		EventRelationshipUpsertedV1,
+		r.From,
+		r.ID,
+		map[string]any{"target": r.To, "type": r.Type},
+		r.UpdatedAt,
+	)
+	if err != nil {
+		return model.Relationship{}, fmt.Errorf("build relationship lifecycle event: %w", err)
+	}
 	if err := m.store.PutRelationship(r); err != nil {
 		return model.Relationship{}, err
 	}
-	m.publish("mesh.relationship.upserted", r.From, r.ID, map[string]any{"target": r.To, "type": r.Type})
+	m.dispatch(event)
 	return r, nil
 }
 
@@ -189,8 +211,7 @@ func (m *Mesh) Subscribe(buffer int) (<-chan model.Event, func()) {
 	return ch, cancel
 }
 
-func (m *Mesh) publish(kind, source, subject string, data map[string]any) {
-	e := model.Event{ID: fmt.Sprintf("evt-%d", m.seq.Add(1)), Type: kind, Source: source, Subject: subject, Data: data, CreatedAt: time.Now().UTC()}
+func (m *Mesh) dispatch(e model.Event) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 	for ch := range m.subs {

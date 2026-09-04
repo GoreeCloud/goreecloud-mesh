@@ -1,0 +1,118 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mesh.goreecloud.com/contracts/mesh.event.v1.schema.json",
+  "title": "GoreeCloud Mesh lifecycle event v1",
+  "description": "Bounded coordination-only lifecycle events emitted by the current in-process GoreeCloud Mesh event bus.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "id",
+    "type",
+    "source",
+    "subject",
+    "data",
+    "created_at",
+    "authority_transfer"
+  ],
+  "properties": {
+    "schema": {
+      "const": "goreecloud.mesh.event.v1"
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^evt-[1-9][0-9]*$"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "mesh.service.upserted.v1",
+        "mesh.relationship.upserted.v1"
+      ]
+    },
+    "source": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "^[^\\u0000-\\u001F\\u007F]+$"
+    },
+    "subject": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "^[^\\u0000-\\u001F\\u007F]+$"
+    },
+    "data": {
+      "type": "object",
+      "minProperties": 1,
+      "maxProperties": 2
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "authority_transfer": {
+      "const": false
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "const": "mesh.service.upserted.v1"
+          }
+        },
+        "required": ["type"]
+      },
+      "then": {
+        "properties": {
+          "data": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["health"],
+            "properties": {
+              "health": {
+                "type": "string",
+                "enum": ["unknown", "healthy", "degraded", "unavailable"]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "const": "mesh.relationship.upserted.v1"
+          }
+        },
+        "required": ["type"]
+      },
+      "then": {
+        "properties": {
+          "data": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["target", "type"],
+            "properties": {
+              "target": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 128,
+                "pattern": "^[^\\u0000-\\u001F\\u007F]+$"
+              },
+              "type": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256,
+                "pattern": "^[^\\u0000-\\u001F\\u007F]+$"
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

@@ -46,12 +46,14 @@ type Relationship struct {
 }
 
 type Event struct {
-	ID        string         `json:"id"`
-	Type      string         `json:"type"`
-	Source    string         `json:"source"`
-	Subject   string         `json:"subject,omitempty"`
-	Data      map[string]any `json:"data,omitempty"`
-	CreatedAt time.Time      `json:"created_at"`
+	Schema            string         `json:"schema"`
+	ID                string         `json:"id"`
+	Type              string         `json:"type"`
+	Source            string         `json:"source"`
+	Subject           string         `json:"subject"`
+	Data              map[string]any `json:"data"`
+	CreatedAt         time.Time      `json:"created_at"`
+	AuthorityTransfer bool           `json:"authority_transfer"`
 }
 
 type State struct {
