@@ -13,37 +13,39 @@ LOCK = json.loads((SOURCE / "glaze.lock.json").read_text(encoding="utf-8"))
 PUBLIC_FILES = ("index.html", "404.html", "_headers", "robots.txt")
 LOCAL_ASSETS = ("site.css", "site.js")
 
-if LOCK.get("version") != "2.2.0" or LOCK.get("lifecycle") != "Stable":
-    raise SystemExit("Glaze consumer lock must target 2.2.0 Stable")
-if LOCK.get("stable_commit") != "6731098b28dd0393faa878c70d989a221d714a20":
-    raise SystemExit("unexpected Glaze Stable promotion commit")
+if LOCK.get("version") != "1.1.0" or LOCK.get("product") != "GLAZE UI V1.1":
+    raise SystemExit("Glaze consumer lock must target GLAZE UI V1.1 / 1.1.0 Stable")
+if LOCK.get("release_commit") != "15cc76d2bcd4065552dc31c77145b63f34d9e7b2":
+    raise SystemExit("unexpected GLAZE UI V1.1 Stable release commit")
+if LOCK.get("entrypoint") != "css/glaze-v1.1.0.css":
+    raise SystemExit("unexpected GLAZE UI V1.1 Stable entrypoint")
 
 def git_blob_sha(data: bytes) -> str:
     prefix = b"blob " + str(len(data)).encode("ascii") + b"\0"
-    return hashlib.sha1(prefix + data).hexdigest()
+    return hashlib.sha1(prefix + data, usedforsecurity=False).hexdigest()
 
 def require_file(path: Path) -> Path:
     if not path.is_file() or path.is_symlink():
         raise SystemExit(f"missing or unsafe public source: {path.relative_to(ROOT)}")
     return path
 
-def read_glaze(name: str, expected_sha: str) -> bytes:
+def read_glaze(upstream_path: str, expected_sha: str) -> bytes:
     source_root = os.environ.get("GLAZE_UI_SOURCE")
     if source_root:
-        data = require_file(Path(source_root) / "css" / name).read_bytes()
+        data = require_file(Path(source_root) / upstream_path).read_bytes()
     else:
-        url = f"https://raw.githubusercontent.com/{LOCK['repository']}/{LOCK['tag']}/css/{name}"
+        url = f"https://raw.githubusercontent.com/{LOCK['repository']}/{LOCK['release_commit']}/{upstream_path}"
         request = urllib.request.Request(url, headers={"User-Agent": "GoreeCloud-public-site-builder/1"})
         with urllib.request.urlopen(request, timeout=20) as response:
             data = response.read()
     actual_sha = git_blob_sha(data)
     if actual_sha != expected_sha:
-        raise SystemExit(f"Glaze integrity mismatch for {name}: {actual_sha} != {expected_sha}")
+        raise SystemExit(f"Glaze integrity mismatch for {upstream_path}: {actual_sha} != {expected_sha}")
     return data
 
 if DIST.exists():
     shutil.rmtree(DIST)
-(DIST / "assets").mkdir(parents=True)
+(DIST / "assets" / "glaze").mkdir(parents=True)
 
 for name in PUBLIC_FILES:
     shutil.copy2(require_file(SOURCE / name), DIST / name)
@@ -55,10 +57,11 @@ for asset in sorted((SOURCE / "assets").iterdir()):
     if asset.is_symlink() or not asset.is_file():
         raise SystemExit(f"unsafe public asset: {asset.relative_to(ROOT)}")
     shutil.copy2(asset, DIST / "assets" / asset.name)
-for name, expected_sha in LOCK["files"].items():
-    (DIST / "assets" / name).write_bytes(read_glaze(name, expected_sha))
+for upstream_path, expected_sha in LOCK["files"].items():
+    name = Path(upstream_path).name
+    (DIST / "assets" / "glaze" / name).write_bytes(read_glaze(upstream_path, expected_sha))
 
 print(
-    f"Built public site with Glaze UI {LOCK['version']} {LOCK['lifecycle']} "
-    f"pinned to {LOCK['stable_commit']}"
+    f"Built public site with {LOCK['product']} / {LOCK['version']} Stable "
+    f"pinned to {LOCK['release_commit']}"
 )
