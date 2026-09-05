@@ -79,6 +79,69 @@ func TestRelationshipLifecycleEventUsesClosedPayload(t *testing.T) {
 	}
 }
 
+func TestSubscribeTypesMinimizesLocalDelivery(t *testing.T) {
+	m := testMesh(t)
+	events, cancel, err := m.SubscribeTypes(4, EventRelationshipUpsertedV1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer cancel()
+
+	_, err = m.RegisterService(model.Service{ID: "manager", Name: "GoreeCloud Manager", Kind: "application"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = m.RegisterService(model.Service{ID: "identity", Name: "GoreeCloud Identity", Kind: "platform"})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	select {
+	case event := <-events:
+		t.Fatalf("relationship-only subscriber received unrelated service event: %#v", event)
+	default:
+	}
+
+	_, err = m.AddRelationship(model.Relationship{
+		ID:      "manager-identity-auth",
+		From:    "manager",
+		To:      "identity",
+		Type:    "consumes",
+		Enabled: true,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	select {
+	case event := <-events:
+		if event.Type != EventRelationshipUpsertedV1 {
+			t.Fatalf("unexpected filtered event type: %q", event.Type)
+		}
+	case <-time.After(time.Second):
+		t.Fatal("expected relationship event for relationship-only subscriber")
+	}
+}
+
+func TestSubscribeTypesRejectsUnknownEventType(t *testing.T) {
+	m := testMesh(t)
+	if _, _, err := m.SubscribeTypes(4, "mesh.application.payload.v1"); err == nil {
+		t.Fatal("filtered subscription must reject unregistered event types")
+	}
+	if _, _, err := m.SubscribeTypes(4); err == nil {
+		t.Fatal("filtered subscription must require at least one event type")
+	}
+}
+
+func TestSubscribeClampsLocalBuffer(t *testing.T) {
+	m := testMesh(t)
+	events, cancel := m.Subscribe(maxEventSubscriberBuffer + 1000)
+	defer cancel()
+	if got := cap(events); got != maxEventSubscriberBuffer {
+		t.Fatalf("subscriber buffer = %d, want hard ceiling %d", got, maxEventSubscriberBuffer)
+	}
+}
+
 func TestEventContractRejectsAuthorityTransferAndArbitraryPayloads(t *testing.T) {
 	base := model.Event{
 		Schema:    EventSchemaV1,
