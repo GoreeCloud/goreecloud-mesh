@@ -48,6 +48,8 @@ The Go validator rejects unsupported event types, unexpected payload fields, mal
 
 Mesh lifecycle events are metadata, not application messages. The v1 payloads are intentionally closed so a caller cannot opportunistically add bearer tokens, authorization headers, private keys, browsing or DNS history, user content, recovery secrets, raw security findings, or other producer-private material.
 
+Local consumers may use `SubscribeTypes` to request only the registered lifecycle event types they actually need. Unknown event types are rejected instead of silently broadening delivery. This filtering is a data-minimization control only; a caller inside the Mesh process is not thereby authenticated as a GoreeCloud service.
+
 A valid Mesh event states that Mesh observed a local Registry or relationship lifecycle action. It does not independently prove authentication, authorization, security, privacy, recovery, health, conformance, or Stable eligibility owned by another GoreeCloud authority.
 
 ## Delivery semantics
@@ -55,7 +57,9 @@ A valid Mesh event states that Mesh observed a local Registry or relationship li
 The current event bus is bounded and best-effort:
 
 - subscribers are local in-process channels;
-- each subscriber chooses a bounded buffer (with a minimum size of one);
+- `Subscribe` receives all currently registered lifecycle event types for backward-compatible local behavior;
+- `SubscribeTypes` permits explicit event-type minimization and rejects unsupported event types;
+- subscriber buffers have a minimum size of one and a hard maximum of 64 events;
 - publication does not block a Registry or relationship mutation when a subscriber buffer is full;
 - an event may therefore be dropped for a slow local subscriber;
 - event IDs are process-local and are not durable replay offsets;
@@ -63,7 +67,7 @@ The current event bus is bounded and best-effort:
 - restart does not replay historical events; and
 - no external delivery, federation, webhook, queue, cross-host ordering, or notification guarantee is claimed.
 
-These semantics are intentional for the current foundation and must not be described as durable event delivery.
+These semantics are intentional for the current foundation and must not be described as durable event delivery. Local filtering and buffer limits do not establish consumer authentication, acknowledgement, replay, or delivery guarantees.
 
 ## Future durable/external boundary
 
