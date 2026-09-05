@@ -11,9 +11,9 @@ The native foundation provides:
 - **Mesh Registry** — durable registry of applications, services, capabilities, dependencies, endpoints, health, and platform-conformance state.
 - **Mesh Graph** — explicit service relationships and transitive dependency-impact analysis.
 - **Mesh Policy** — fail-closed evaluation of registered relationships and requested capabilities.
-- **Mesh Events** — bounded in-process event publication for registry and relationship lifecycle changes.
+- **Mesh Events** — bounded in-process publication for Registry and relationship lifecycle changes using the closed, versioned `goreecloud.mesh.event.v1` contract.
 - **Mesh Nodes and Connections** — service/node identity, operational state, and explicit versionable relationships.
-- **Mesh Platform Catalog and Status** — authority/contract metadata and joined integration status for GoreeCloud Identity, Glaze UI, Wardveil Security, Privacy Shield, and Everkeep without transferring their authority into Mesh.
+- **Mesh Platform Catalog and Status** — authority/contract metadata and joined integration status for GoreeCloud Manager, GoreeCloud Identity, Glaze UI, Wardveil Security, Privacy Shield, and Everkeep without transferring their authority into Mesh.
 - **Mesh Source Attestations** — durable exact-source provenance kept independent from runtime and Stable acceptance.
 - **Mesh Runtime Evidence** — bounded runtime contract evidence bound to canonical repositories, contracts, exact revisions, and observation time.
 - **Mesh Evidence Envelopes** — durable immutable transport records for minimized producer-authoritative evidence with canonical producer/contract/authority validation, freshness, scoped subjects, minimization flags, and optional digest binding.
@@ -35,11 +35,11 @@ The native foundation provides:
 - A write scope is insufficient to impersonate another producer: the verified service identity must match the envelope producer.
 - Authentication proves the bound producer identity and granted Mesh scope; it does not prove the producer-domain assertion carried by an evidence envelope.
 - Expired evidence remains auditable but cannot satisfy current-evidence queries; normal expiry must not prevent restart.
-- Mandatory GoreeCloud Identity, Glaze UI, Wardveil Security, Privacy Shield, and Everkeep contracts remain release gates; this foundation does **not** claim Stable conformance.
+- Required GoreeCloud Manager, Identity, Glaze UI, Wardveil Security, Privacy Shield, and Everkeep relationships remain release gates; this foundation does **not** claim Stable conformance.
 
 ## Integral platform authority model
 
-Mesh is the coordination authority among the six integral GoreeCloud platform systems. The other systems keep their own authority: GoreeCloud Identity for identity/authentication/authorization, Privacy Shield for privacy and data-use authority, Wardveil Security for security evaluation and protection, Everkeep for continuity/recovery/preservation, and Glaze UI for presentation and design conformance. Mesh may validate and transport bounded evidence from those systems but cannot manufacture or upgrade their domain truth.
+Mesh is the coordination authority within the seven GoreeCloud Integral Platform Systems. GoreeCloud Manager remains the administration and operational-management surface; GoreeCloud Identity owns identity, authentication, and authorization; Privacy Shield owns privacy and data-use authority; Wardveil Security owns security evaluation and protection; Everkeep owns continuity, recovery, and preservation; and Glaze UI owns presentation and design conformance. Mesh may validate, correlate, and transport bounded coordination evidence from those systems but cannot manufacture or upgrade their domain truth.
 
 The platform evidence-plane contract is `contracts/mesh.platform-evidence-plane.v1.json`. It binds each producer to its canonical repository and producer-owned Mesh evidence profile while keeping `authority_transfer` false.
 
@@ -69,7 +69,7 @@ Authenticated evidence routes include:
 
 A first accepted envelope returns `201`; an exact immutable replay returns `200` with `replayed: true`.
 
-See [`docs/api.md`](docs/api.md), [`docs/evidence-envelope.md`](docs/evidence-envelope.md), [`docs/evidence-delivery.md`](docs/evidence-delivery.md), and [`docs/architecture.md`](docs/architecture.md).
+See [`docs/api.md`](docs/api.md), [`docs/events.md`](docs/events.md), [`docs/evidence-envelope.md`](docs/evidence-envelope.md), [`docs/evidence-delivery.md`](docs/evidence-delivery.md), and [`docs/architecture.md`](docs/architecture.md).
 
 ## Validation
 
@@ -83,7 +83,7 @@ CI runs formatting validation, vetting, tests, build validation, and platform co
 
 ## Release boundary
 
-This repository is in **Development**. The source now contains the durable evidence registry, authenticated read/write enforcement, producer-bound delivery receipts, consumer subject views, and reference integration contracts. It does not independently establish a deployed GoreeCloud Identity verifier, production Gateway/Network/TLS routing, DNS publication, multi-node replication, target-environment producer delivery, Mesh Center completion, or production/Stable acceptance of the integral platform systems.
+This repository is in **Development**. The source now contains the durable evidence registry, authenticated read/write enforcement, producer-bound delivery receipts, consumer subject views, reference integration contracts, and a bounded versioned in-process lifecycle-event contract. It does not independently establish a deployed GoreeCloud Identity verifier, production Gateway/Network/TLS routing, DNS publication, durable external event delivery/replay, multi-node replication, target-environment producer delivery, Mesh Center completion, or production/Stable acceptance of the integral platform systems.
 
 ## License
 
