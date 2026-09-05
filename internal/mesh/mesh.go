@@ -13,15 +13,23 @@ import (
 	"github.com/GoreeCloud/goreecloud-mesh/internal/store"
 )
 
+const maxEventSubscriberBuffer = 64
+
+type eventSubscriber struct {
+	ch       chan model.Event
+	allTypes bool
+	types    map[string]struct{}
+}
+
 type Mesh struct {
 	store *store.Store
 	seq   atomic.Uint64
 	mu    sync.RWMutex
-	subs  map[chan model.Event]struct{}
+	subs  map[chan model.Event]eventSubscriber
 }
 
 func New(s *store.Store) *Mesh {
-	return &Mesh{store: s, subs: map[chan model.Event]struct{}{}}
+	return &Mesh{store: s, subs: map[chan model.Event]eventSubscriber{}}
 }
 
 func (m *Mesh) State() model.State { return m.store.Snapshot() }
@@ -192,13 +200,44 @@ func (m *Mesh) Impact(id string) []string {
 	return out
 }
 
+// Subscribe preserves the original local subscription behavior: the caller
+// receives every currently registered lifecycle event type. The buffer is
+// always clamped to the local event-bus ceiling so an in-process consumer
+// cannot request unbounded channel memory.
 func (m *Mesh) Subscribe(buffer int) (<-chan model.Event, func()) {
+	return m.subscribe(buffer, true, nil)
+}
+
+// SubscribeTypes lets an in-process consumer minimize which lifecycle event
+// types it receives. This is a privacy/minimization boundary, not consumer
+// authentication: external or cross-process subscriptions still require a
+// separate GoreeCloud Identity-authenticated transport milestone.
+func (m *Mesh) SubscribeTypes(buffer int, eventTypes ...string) (<-chan model.Event, func(), error) {
+	if len(eventTypes) == 0 {
+		return nil, nil, errors.New("at least one event type is required")
+	}
+	types := make(map[string]struct{}, len(eventTypes))
+	for _, eventType := range eventTypes {
+		eventType = strings.TrimSpace(eventType)
+		if !validEventType(eventType) {
+			return nil, nil, fmt.Errorf("unsupported subscription event type %q", eventType)
+		}
+		types[eventType] = struct{}{}
+	}
+	ch, cancel := m.subscribe(buffer, false, types)
+	return ch, cancel, nil
+}
+
+func (m *Mesh) subscribe(buffer int, allTypes bool, types map[string]struct{}) (<-chan model.Event, func()) {
 	if buffer < 1 {
 		buffer = 1
 	}
+	if buffer > maxEventSubscriberBuffer {
+		buffer = maxEventSubscriberBuffer
+	}
 	ch := make(chan model.Event, buffer)
 	m.mu.Lock()
-	m.subs[ch] = struct{}{}
+	m.subs[ch] = eventSubscriber{ch: ch, allTypes: allTypes, types: types}
 	m.mu.Unlock()
 	cancel := func() {
 		m.mu.Lock()
@@ -214,11 +253,25 @@ func (m *Mesh) Subscribe(buffer int) (<-chan model.Event, func()) {
 func (m *Mesh) dispatch(e model.Event) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
-	for ch := range m.subs {
+	for _, sub := range m.subs {
+		if !sub.allTypes {
+			if _, ok := sub.types[e.Type]; !ok {
+				continue
+			}
+		}
 		select {
-		case ch <- e:
+		case sub.ch <- e:
 		default:
 		}
+	}
+}
+
+func validEventType(eventType string) bool {
+	switch eventType {
+	case EventServiceUpsertedV1, EventRelationshipUpsertedV1:
+		return true
+	default:
+		return false
 	}
 }
 
