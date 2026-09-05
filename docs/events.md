@@ -2,7 +2,7 @@
 
 ## Purpose
 
-GoreeCloud Mesh Events provides a bounded coordination signal for Registry and relationship lifecycle changes. The current implementation is deliberately **in-process only**. It decouples local producers from local consumers without turning Mesh into a store or transport for application payloads, credentials, user activity, or producer-private data.
+GoreeCloud Mesh Events provides a bounded coordination signal for Registry and relationship lifecycle changes. The underlying bus remains deliberately **in-process, best-effort, non-durable, and non-replayable**. The source implementation now also exposes a narrowly scoped GoreeCloud Identity-authenticated HTTP streaming adapter for external consumers; that adapter transports only the same closed lifecycle metadata and does not turn Mesh into a durable event broker or a store for application payloads, credentials, user activity, or producer-private data.
 
 The machine-readable contract is `contracts/mesh.event.v1.schema.json` and the Go contract identifier is `goreecloud.mesh.event.v1`.
 
@@ -48,35 +48,42 @@ The Go validator rejects unsupported event types, unexpected payload fields, mal
 
 Mesh lifecycle events are metadata, not application messages. The v1 payloads are intentionally closed so a caller cannot opportunistically add bearer tokens, authorization headers, private keys, browsing or DNS history, user content, recovery secrets, raw security findings, or other producer-private material.
 
-Local consumers may use `SubscribeTypes` to request only the registered lifecycle event types they actually need. Unknown event types are rejected instead of silently broadening delivery. This filtering is a data-minimization control only; a caller inside the Mesh process is not thereby authenticated as a GoreeCloud service.
+Local consumers may use `SubscribeTypes` to request only the registered lifecycle event types they actually need. External consumers must authenticate through the existing GoreeCloud Identity verifier boundary, possess the dedicated read-only `mesh.events.read` scope, and explicitly name at least one registered event type. Possession of unrelated Mesh read or write scopes does not authorize event consumption.
 
-A valid Mesh event states that Mesh observed a local Registry or relationship lifecycle action. It does not independently prove authentication, authorization, security, privacy, recovery, health, conformance, or Stable eligibility owned by another GoreeCloud authority.
+The external adapter rejects unknown query parameters, unsupported event types, ambiguous repeated bounds, replay requests, and `Last-Event-ID`. Its query surface contains only event-type filters and bounded transport controls; credentials remain in the normal Identity authorization boundary rather than event payloads or query parameters.
+
+A valid Mesh event states that Mesh observed a local Registry or relationship lifecycle action. Authentication proves the consumer identity and read scope only. Neither authentication nor successful delivery independently proves security, privacy, recovery, health, conformance, Stable eligibility, or producer-domain truth owned by another GoreeCloud authority.
 
 ## Delivery semantics
 
-The current event bus is bounded and best-effort:
+The current event path is bounded and best-effort:
 
-- subscribers are local in-process channels;
+- the authoritative event bus remains process-local;
 - `Subscribe` receives all currently registered lifecycle event types for backward-compatible local behavior;
 - `SubscribeTypes` permits explicit event-type minimization and rejects unsupported event types;
-- subscriber buffers have a minimum size of one and a hard maximum of 64 events;
+- local subscriber buffers have a minimum size of one and a hard maximum of 64 events;
 - publication does not block a Registry or relationship mutation when a subscriber buffer is full;
-- an event may therefore be dropped for a slow local subscriber;
-- event IDs are process-local and are not durable replay offsets;
+- an event may therefore be dropped for a slow subscriber;
+- `GET /v1/events/stream` exposes a source-level external Server-Sent Events adapter protected by `mesh.events.read`;
+- the external consumer must supply one or more repeated `type=<registered-event-type>` filters;
+- external requested buffers are bounded to 1–64 events;
+- each HTTP stream window is bounded to 1–10 seconds and closes deliberately, preserving the existing server write-timeout boundary;
+- the adapter emits no SSE `id:` field and rejects `Last-Event-ID`, cursor, or other replay-style parameters;
+- reconnecting creates a new live subscription and can miss events between stream windows;
+- event IDs inside the JSON envelope are process-local identifiers, not durable replay offsets;
 - events are not persisted to the Mesh state store or Platform Registry;
 - restart does not replay historical events; and
-- no external delivery, federation, webhook, queue, cross-host ordering, or notification guarantee is claimed.
+- no durable external delivery, federation, webhook, queue, cross-host ordering, acknowledgement, retry, or notification guarantee is claimed.
 
-These semantics are intentional for the current foundation and must not be described as durable event delivery. Local filtering and buffer limits do not establish consumer authentication, acknowledgement, replay, or delivery guarantees.
+These semantics must not be described as durable event delivery. The external adapter establishes a source-level authenticated read boundary for live lifecycle metadata only.
 
-## Future durable/external boundary
+## Remaining durable/external boundary
 
-Durable journals, replay, subscriber checkpoints, retry/backoff, retention policies, external subscriptions, cross-host delivery, and delivery guarantees remain a separate Mesh milestone. That future work must define and validate, before activation:
+Durable journals, replay, subscriber checkpoints, retry/backoff, retention policies, continuous delivery guarantees, cross-host/federated transport, and delivery acceptance remain a separate Mesh milestone. That future work must define and validate, before activation:
 
-- GoreeCloud Identity-authenticated publisher and consumer identities;
-- distinct least-privilege publish/read/subscribe scopes rather than ambient Mesh access;
-- producer and subject binding that prevents cross-service impersonation;
-- Wardveil trust and abuse-control requirements;
+- GoreeCloud Identity-authenticated publisher identities in addition to the current consumer read boundary;
+- distinct least-privilege publish/read scopes and producer/subject binding that prevents cross-service impersonation;
+- Wardveil trust, event-integrity, connection-security, and abuse-control requirements;
 - Privacy Shield minimization, purpose, retention, disclosure, and deletion requirements;
 - bounded retry and dead-letter behavior that cannot amplify sensitive data exposure;
 - ordering and idempotency semantics;

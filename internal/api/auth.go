@@ -14,6 +14,7 @@ const (
 	ScopePolicyEvaluate        = "mesh.policy.evaluate"
 	ScopeAttestationsWrite     = "mesh.attestations.write"
 	ScopeContractsWrite        = "mesh.contracts.write"
+	ScopeEventsRead            = "mesh.events.read"
 	ScopeEvidenceRead          = "mesh.evidence.read"
 	ScopeEvidenceWrite         = "mesh.evidence.write"
 	ScopeRecoveryWrite         = "mesh.everkeep.recovery.write"
