@@ -15,10 +15,10 @@ import (
 )
 
 const (
-	defaultExternalEventBuffer       = 8
-	maxExternalEventBuffer           = 64
-	defaultEventStreamWindowSeconds  = 5
-	maximumEventStreamWindowSeconds  = 10
+	defaultExternalEventBuffer      = 8
+	maxExternalEventBuffer          = 64
+	defaultEventStreamWindowSeconds = 5
+	maximumEventStreamWindowSeconds = 10
 )
 
 type eventStreamServer struct {
