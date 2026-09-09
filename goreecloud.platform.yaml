@@ -1,0 +1,153 @@
+schema_version: '0.2'
+component:
+  type: service
+  id: goreecloud-mesh
+  product_name: GoreeCloud Mesh
+  repository: GoreeCloud/goreecloud-mesh
+lifecycle: development
+version: '0.3'
+supported_platforms:
+- linux
+api:
+  versions:
+  - v1
+  endpoints:
+  - name: health
+    url: /healthz
+    purpose: Process-availability signal; not a complete production-readiness or dependency-health verdict.
+  - name: private-api
+    url: /v1/
+    purpose: Private-first service discovery, registry, graph, policy, platform-evidence, and coordination API namespace.
+  - name: evidence
+    url: /v1/evidence/envelopes
+    purpose: Authenticated bounded evidence inspection and delivery surface.
+  - name: lifecycle-events
+    url: /v1/events/stream
+    purpose: Identity-authenticated, explicitly filtered, live-only lifecycle-event stream with bounded buffers and stream windows; not a durable replay API.
+platform_systems:
+  manager:
+    result: applicable-migration-required
+    version: null
+    evidence:
+    - README.md
+    - contracts/mesh.platform-registry.v1.json
+    - contracts/mesh.event.v1.json
+    notes: Manager has source-level bounded read-only Platform Registry and lifecycle-event consumers in its active Development stack. Accepted live Identity credentials, deployed routing, end-to-end runtime evidence, and production acceptance remain incomplete.
+  privacy_shield:
+    result: applicable-migration-required
+    version: null
+    evidence:
+    - docs/platform-conformance.json
+    - docs/privacy-everkeep.md
+    - contracts/mesh.event.v1.json
+    notes: Source-level privacy authority, minimization, retention, and evidence boundaries exist. Current live lifecycle events remain minimized, non-durable coordination metadata; any durable retention or new data classes require accepted Privacy Shield purpose, retention, disclosure, and deletion governance.
+  wardveil_security:
+    result: applicable-migration-required
+    version: null
+    evidence:
+    - docs/platform-conformance.json
+    - docs/identity-trust.md
+    - contracts/mesh.platform-evidence-plane.v1.json
+    notes: Source-level trust and fail-closed producer-authority boundaries exist, while approved live Wardveil runtime evidence, abuse controls for external event consumers, and production acceptance remain pending.
+  everkeep:
+    result: applicable-migration-required
+    version: null
+    evidence:
+    - docs/everkeep.adoption.json
+    - docs/everkeep.acceptance.json
+    - docs/platform-conformance.json
+    - contracts/mesh.event.v1.json
+    notes: Mesh has source-level continuity adoption and evidence contracts, but the lifecycle-event stream is intentionally non-durable and non-replayable. Durable event journal/checkpoint/recovery state and production backup, export, restore, corruption recovery, and current-contract Everkeep acceptance remain pending.
+  glaze_ui:
+    result: applicable-migration-required
+    version: 2.2.0
+    evidence:
+    - WEBSITE.md
+    - website/glaze.lock.json
+    - docs/platform-conformance.json
+    notes: The standalone public Mesh website still carries a historical Glaze UI 2.2.0 source/published baseline. The current mandatory consumer target is GLAZE UI V1.3 / 1.3.0; the administrative Mesh Center and current product-level rendered/accessibility/resilience acceptance remain unfinished.
+  mesh:
+    result: not-applicable-justified
+    version: '0.3'
+    evidence:
+    - README.md
+    - docs/api.md
+    - docs/events.md
+    - contracts/mesh.event.v1.json
+    notes: This repository implements the GoreeCloud Mesh coordination authority itself; a separate Mesh-to-Mesh platform integration is not applicable.
+    capabilities:
+    - platform-registry
+    - evidence-plane
+    - live-lifecycle-events
+    dependencies: []
+    published_events:
+    - mesh.service.upserted.v1
+    - mesh.relationship.upserted.v1
+    consumed_events: []
+  identity:
+    result: applicable-migration-required
+    version: null
+    evidence:
+    - contracts/mesh.identity-verification.json
+    - docs/identity-trust.md
+    - docs/platform-conformance.json
+    - docs/events.md
+    notes: A source-level verifier and scoped service-identity boundary exist, and external lifecycle-event consumers require the dedicated mesh.events.read scope. Deployed GoreeCloud Identity/JWKS trust, live workload issuance, rotation/revocation operations, and end-to-end runtime acceptance remain pending.
+health:
+  health_endpoint: /healthz
+  readiness_endpoint: null
+continuity:
+  backup:
+    required: true
+    requirements:
+    - Protect Mesh durable registry, relationship, source-attestation, runtime-evidence, evidence-envelope, and recovery-evidence state according to accepted Everkeep policy before production dependency.
+    - The current lifecycle-event bus is deliberately in-process and non-durable; no event history or subscriber state may be represented as protected durable state until a governed durable-event design is accepted.
+  restore:
+    required: true
+    requirements:
+    - Validate clean restoration, state integrity, API behavior, and accepted recovery evidence before production or Stable qualification.
+    - Any future durable event journal, checkpoints, retry/dead-letter state, or retained subscriber state must have explicit restore and replay semantics before activation.
+  export:
+    required: true
+    requirements:
+    - Keep Mesh coordination state and approved evidence records exportable in documented, independently recoverable forms.
+  portability:
+    required: true
+    requirements:
+    - Preserve replaceable storage and documented contracts so Mesh does not become an unrecoverable dependency or proprietary data silo.
+external_dependencies: []
+compatibility:
+  platform_contract: '0.2'
+  glaze_ui_required: 1.3.0
+  requires:
+  - goreecloud-platform-contract==0.2
+  - glaze-ui==1.3.0
+  provides:
+  - mesh-api-v1
+  - goreecloud-mesh-event-v1
+  - goreecloud-mesh-platform-registry-v1
+evidence:
+  acceptance_tests: []
+  release: []
+conformance:
+  status: nonconformant
+  validated_at: null
+  evidence:
+  - README.md
+  - docs/api.md
+  - docs/events.md
+  - docs/platform-conformance.json
+  - contracts/mesh.platform-evidence-plane.v1.json
+  - contracts/mesh.identity-verification.json
+  - contracts/mesh.event.v1.json
+  - WEBSITE.md
+  blockers:
+  - GoreeCloud Mesh remains in Development and is not production or Stable accepted.
+  - Manager source-level registry/event consumers exist, but accepted live Manager-to-Mesh runtime integration remains pending.
+  - A deployed GoreeCloud Identity verifier, production workload issuance, and accepted authorization path remain pending.
+  - Wardveil Security runtime evidence, event-consumer abuse controls, and Privacy Shield live governance acceptance remain pending.
+  - Everkeep production backup, export, restore, and recovery acceptance remain pending; current lifecycle events are intentionally non-durable.
+  - The administrative Mesh Center and current GLAZE UI V1.3 / 1.3.0 product-level acceptance remain incomplete; the public site still uses a historical 2.2.0 source baseline.
+  - Durable event journal/replay/checkpoints/retry/dead-letter/retention/order/idempotency semantics and cross-process/cross-host delivery remain unimplemented.
+  - Production Monitoring, Gateway, and Network adapters remain pending.
+  - Target-environment runtime, rollback, failure-mode, publication, and production acceptance remain pending.
