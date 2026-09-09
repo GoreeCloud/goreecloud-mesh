@@ -1,0 +1,31 @@
+name: Platform Contract
+
+on:
+  pull_request:
+    paths:
+      - goreecloud.platform.yaml
+      - .github/workflows/platform-contract.yml
+      - README.md
+      - docs/platform-conformance.json
+      - docs/events.md
+      - contracts/mesh.event.v1.json
+  push:
+    branches:
+      - main
+    paths:
+      - goreecloud.platform.yaml
+      - .github/workflows/platform-contract.yml
+      - README.md
+      - docs/platform-conformance.json
+      - docs/events.md
+      - contracts/mesh.event.v1.json
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    uses: GoreeCloud/GoreeCloud/.github/workflows/reusable-platform-manifest.yml@3204afc4f603f3b29a456f01cbb28755d7f7bd00
+    with:
+      manifest-path: goreecloud.platform.yaml
