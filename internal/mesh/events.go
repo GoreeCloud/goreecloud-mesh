@@ -21,7 +21,12 @@ const (
 	maxEventValueRunes    = 256
 )
 
-var eventIDPattern = regexp.MustCompile(`^evt-[1-9][0-9]*$`)
+var (
+	eventIDPattern       = regexp.MustCompile(`^evt-[1-9][0-9]*$`)
+	eventTypeNamePattern = regexp.MustCompile(
+		`^mesh(?:\.[a-z][a-z0-9-]*){2,}\.v[1-9][0-9]*$`,
+	)
+)
 
 func newEvent(seq uint64, kind, source, subject string, data map[string]any, createdAt time.Time) (model.Event, error) {
 	e := model.Event{
@@ -47,6 +52,11 @@ func newEvent(seq uint64, kind, source, subject string, data map[string]any, cre
 func ValidateEvent(e model.Event) error {
 	if e.Schema != EventSchemaV1 {
 		return fmt.Errorf("unsupported event schema %q", e.Schema)
+	}
+	if !eventTypeNamePattern.MatchString(e.Type) {
+		return errors.New(
+			"event type must use the mesh.<subject>.<action>.v<major> lowercase namespace",
+		)
 	}
 	if !eventIDPattern.MatchString(e.ID) {
 		return errors.New("event id must use the process-local evt-<sequence> form")

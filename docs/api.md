@@ -4,12 +4,12 @@ The initial Mesh API is a private-first JSON HTTP contract. It does not imply pu
 
 ## Common behavior
 
-- Request and response content uses JSON unless an endpoint has no body.
+- Request and response content uses JSON unless an endpoint explicitly defines another media type, such as the bounded event stream.
 - Responses include `Cache-Control: no-store` and `X-Content-Type-Options: nosniff`.
 - JSON request bodies are bounded to 1 MiB and reject unknown fields.
 - Identifiers are caller-supplied stable strings in the first milestone.
 - Protected routes use the GoreeCloud Identity verifier boundary and dedicated least-privilege scopes. When a verifier is unavailable, protected routes fail closed with `401`; a verified principal without the required scope receives `403`.
-- Evidence read routes require `mesh.evidence.read`; evidence delivery requires `mesh.evidence.write` plus producer-service identity binding.
+- Event consumption requires `mesh.events.read`; evidence read routes require `mesh.evidence.read`; evidence delivery requires `mesh.evidence.write` plus producer-service identity binding.
 - Other read-only inspection routes remain private-first until their production authorization policies are separately accepted.
 
 ## Health
@@ -79,6 +79,29 @@ Evaluates whether a registered source has an enabled relationship that authorize
 The evaluator fails closed when the source or target is unknown, the target is unavailable, the capability is missing, the target does not advertise the capability, or no enabled relationship authorizes it.
 
 Mesh Policy is one authorization input, not a substitute for application authorization, GoreeCloud Identity, Gateway controls, Network controls, or Wardveil Security.
+
+## Live lifecycle events
+
+### `GET /v1/events/stream`
+
+Requires the dedicated read-only `mesh.events.read` scope and the existing GoreeCloud Identity verifier boundary.
+
+The response media type is `text/event-stream`. This endpoint is a bounded live adapter over the process-local best-effort Mesh event bus; it is not a journal, queue, or replay API.
+
+Required query input:
+
+- one or more `type=<registered-event-type>` parameters. At least one explicit type is required so external consumers do not silently receive every lifecycle event.
+
+Optional bounded transport controls:
+
+- `buffer=<1..64>` — defaults to `8`;
+- `window_seconds=<1..10>` — defaults to `5`.
+
+Only `type`, `buffer`, and `window_seconds` are accepted. Unknown parameters fail closed. `Last-Event-ID`, cursor-style requests, and replay semantics are rejected. The stream intentionally emits no SSE `id:` field. The JSON event envelope still contains its process-local `evt-<sequence>` identifier, but that identifier is not a durable offset.
+
+Each stream closes after its bounded window. Reconnecting creates a fresh live subscription; events may be missed between windows or when a subscriber buffer fills. No acknowledgement, retry, ordering, durability, cross-host continuity, or delivery guarantee is implied. See [`events.md`](events.md).
+
+Authentication establishes the consumer identity and event-read authority only. It does not upgrade event payloads into security, privacy, recovery, health, conformance, or producer-domain truth.
 
 ## Integral platform catalog
 

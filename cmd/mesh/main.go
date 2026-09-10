@@ -80,8 +80,10 @@ func main() {
 		logger.Warn("GoreeCloud Identity verifier is not configured; authenticated Mesh APIs will fail closed")
 	}
 
-	baseHandler := meshapi.NewAuthorizedWithRecoveryAndEvidence(mesh.New(state), contractRegistry, attestationRegistry, recoveryRegistry, evidenceEnvelopeRegistry, verifier, logger)
-	handler := meshapi.WithPlatformRegistry(baseHandler, platformRegistry, verifier)
+	meshRuntime := mesh.New(state)
+	baseHandler := meshapi.NewAuthorizedWithRecoveryAndEvidence(meshRuntime, contractRegistry, attestationRegistry, recoveryRegistry, evidenceEnvelopeRegistry, verifier, logger)
+	platformHandler := meshapi.WithPlatformRegistry(baseHandler, platformRegistry, verifier)
+	handler := meshapi.WithEventStream(platformHandler, meshRuntime, verifier, logger)
 	server := &http.Server{
 		Addr:              *listen,
 		Handler:           handler,

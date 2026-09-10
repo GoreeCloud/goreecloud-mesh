@@ -79,6 +79,30 @@ func TestRelationshipLifecycleEventUsesClosedPayload(t *testing.T) {
 	}
 }
 
+func TestEventTypesUseGovernedVersionedMeshNamespace(t *testing.T) {
+	for _, eventType := range []string{
+		EventServiceUpsertedV1,
+		EventRelationshipUpsertedV1,
+	} {
+		if !eventTypeNamePattern.MatchString(eventType) {
+			t.Fatalf("registered event type %q violates naming convention", eventType)
+		}
+	}
+
+	invalid := model.Event{
+		Schema:    EventSchemaV1,
+		ID:        "evt-1",
+		Type:      "Mesh.service.upserted.v1",
+		Source:    "identity",
+		Subject:   "identity",
+		Data:      map[string]any{"health": "healthy"},
+		CreatedAt: time.Now().UTC(),
+	}
+	if err := ValidateEvent(invalid); err == nil {
+		t.Fatal("event contract must reject event types outside the lowercase Mesh namespace")
+	}
+}
+
 func TestSubscribeTypesMinimizesLocalDelivery(t *testing.T) {
 	m := testMesh(t)
 	events, cancel, err := m.SubscribeTypes(4, EventRelationshipUpsertedV1)
@@ -175,7 +199,7 @@ func TestEventContractRejectsAuthorityTransferAndArbitraryPayloads(t *testing.T)
 	}
 }
 
-func TestEventSchemaArtifactIsValidJSONAndNamesCurrentContract(t *testing.T) {
+func TestEventSchemaArtifactMatchesCurrentClosedGoContract(t *testing.T) {
 	raw, err := os.ReadFile("../../contracts/mesh.event.v1.schema.json")
 	if err != nil {
 		t.Fatal(err)
@@ -187,6 +211,10 @@ func TestEventSchemaArtifactIsValidJSONAndNamesCurrentContract(t *testing.T) {
 	if got := schema["$id"]; got != "https://mesh.goreecloud.com/contracts/mesh.event.v1.schema.json" {
 		t.Fatalf("unexpected event schema id: %#v", got)
 	}
+	if additional, ok := schema["additionalProperties"].(bool); !ok || additional {
+		t.Fatal("event envelope schema must reject additional properties")
+	}
+
 	properties, ok := schema["properties"].(map[string]any)
 	if !ok {
 		t.Fatal("event schema properties are required")
@@ -194,5 +222,39 @@ func TestEventSchemaArtifactIsValidJSONAndNamesCurrentContract(t *testing.T) {
 	schemaProperty, ok := properties["schema"].(map[string]any)
 	if !ok || schemaProperty["const"] != EventSchemaV1 {
 		t.Fatal("event schema artifact must bind the Go event schema identifier")
+	}
+
+	typeProperty, ok := properties["type"].(map[string]any)
+	if !ok {
+		t.Fatal("event type schema is required")
+	}
+	rawTypes, ok := typeProperty["enum"].([]any)
+	if !ok {
+		t.Fatal("event type schema must use an explicit enum")
+	}
+	schemaTypes := make(map[string]struct{}, len(rawTypes))
+	for _, rawType := range rawTypes {
+		eventType, ok := rawType.(string)
+		if !ok {
+			t.Fatalf("event type enum contains non-string value: %#v", rawType)
+		}
+		schemaTypes[eventType] = struct{}{}
+	}
+	registeredTypes := []string{EventServiceUpsertedV1, EventRelationshipUpsertedV1}
+	if len(schemaTypes) != len(registeredTypes) {
+		t.Fatalf("schema event type count = %d, want %d", len(schemaTypes), len(registeredTypes))
+	}
+	for _, eventType := range registeredTypes {
+		if _, ok := schemaTypes[eventType]; !ok {
+			t.Fatalf("schema is missing registered event type %q", eventType)
+		}
+	}
+
+	authorityProperty, ok := properties["authority_transfer"].(map[string]any)
+	if !ok {
+		t.Fatal("authority_transfer schema is required")
+	}
+	if authority, ok := authorityProperty["const"].(bool); !ok || authority {
+		t.Fatal("event schema must bind authority_transfer to false")
 	}
 }
