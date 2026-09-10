@@ -19,6 +19,8 @@ const (
 	maxExternalEventBuffer          = 64
 	defaultEventStreamWindowSeconds = 5
 	maximumEventStreamWindowSeconds = 10
+	eventDeliveryHeader             = "X-GoreeCloud-Mesh-Event-Delivery"
+	eventReplayHeader               = "X-GoreeCloud-Mesh-Event-Replay"
 )
 
 type eventStreamServer struct {
@@ -99,6 +101,8 @@ func (s *eventStreamServer) stream(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/event-stream; charset=utf-8")
 	w.Header().Set("Cache-Control", "no-store")
 	w.Header().Set("X-Content-Type-Options", "nosniff")
+	w.Header().Set(eventDeliveryHeader, "best-effort-live-only")
+	w.Header().Set(eventReplayHeader, "unavailable")
 	w.WriteHeader(http.StatusOK)
 	_, _ = fmt.Fprint(w, ": goreecloud-mesh live-only best-effort event stream\n\n")
 	flusher.Flush()
