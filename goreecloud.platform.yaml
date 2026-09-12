@@ -17,10 +17,10 @@ api:
     purpose: Process-availability signal; not a complete production-readiness or dependency-health verdict.
   - name: private-api
     url: /v1/
-    purpose: Private-first service discovery, registry, graph, policy, platform-evidence, and coordination API namespace.
+    purpose: Private-first service discovery, reachability registry, transport/evidence, and transitional graph/policy API namespace. Existing coordination-oriented surfaces do not grant Mesh synchronization authority.
   - name: evidence
     url: /v1/evidence/envelopes
-    purpose: Authenticated bounded evidence inspection and delivery surface.
+    purpose: Authenticated bounded evidence transport, inspection, and delivery surface.
 platform_systems:
   manager:
     result: applicable-blocked
@@ -63,8 +63,9 @@ platform_systems:
     version: '0.3'
     evidence:
     - README.md
+    - docs/architecture.md
     - docs/api.md
-    notes: This repository implements the GoreeCloud Mesh coordination authority itself; a separate Mesh-to-Mesh platform integration is not applicable.
+    notes: This repository implements the GoreeCloud Mesh connectivity, reachability, and service-communication authority itself; a separate Mesh-to-Mesh platform integration is not applicable. Existing coordination-oriented source surfaces are transitional and do not expand Mesh authority beyond the adopted Integral Platform architecture.
     capabilities: []
     dependencies: []
     published_events: []
@@ -82,8 +83,9 @@ platform_systems:
     version: null
     evidence:
     - README.md
+    - docs/architecture.md
     - docs/api.md
-    notes: GoreeCloud Mesh must provide discovery, reachability, capability coordination, and event or service transport for GoreeCloud Sync without becoming synchronization authority. No accepted Mesh-to-Sync runtime transport/coordination integration is established by the current main source baseline.
+    notes: GoreeCloud Mesh must provide approved discovery, reachability, connectivity, and service/evidence transport to GoreeCloud Sync without becoming synchronization, state-coordination, event-contract, or conflict-resolution authority. No accepted Mesh-to-Sync runtime integration is established by the current main source baseline.
 health:
   health_endpoint: /healthz
   readiness_endpoint: null
@@ -91,7 +93,7 @@ continuity:
   backup:
     required: true
     requirements:
-    - Protect Mesh durable registry, relationship, source-attestation, runtime-evidence, evidence-envelope, and recovery-evidence state according to accepted Everkeep policy before production dependency.
+    - Protect Mesh durable reachability registry, relationship/source-attestation, runtime-evidence, evidence-envelope, and recovery-evidence state according to accepted Everkeep policy before production dependency.
   restore:
     required: true
     requirements:
@@ -99,7 +101,7 @@ continuity:
   export:
     required: true
     requirements:
-    - Keep Mesh coordination state and approved evidence records exportable in documented, independently recoverable forms.
+    - Keep Mesh reachability/registry state and approved evidence records exportable in documented, independently recoverable forms.
   portability:
     required: true
     requirements:
@@ -121,6 +123,7 @@ conformance:
   validated_at: null
   evidence:
   - README.md
+  - docs/architecture.md
   - docs/api.md
   - docs/platform-conformance.json
   - contracts/mesh.platform-evidence-plane.v1.json
@@ -129,7 +132,8 @@ conformance:
   blockers:
   - GoreeCloud Mesh remains in Development and is not production or Stable accepted.
   - Direct GoreeCloud Manager integration remains planned.
-  - GoreeCloud Sync transport/coordination integration and production acceptance remain pending.
+  - GoreeCloud Sync reachability/transport integration and production acceptance remain pending.
+  - Existing Registry/Graph/Policy/Event coordination-oriented source surfaces require controlled decomposition or reclassification so they do not duplicate GoreeCloud Sync state-coordination authority.
   - A deployed GoreeCloud Identity verifier and production authorization path remain pending.
   - Wardveil Security and Privacy Shield runtime adapter evidence and acceptance remain pending.
   - Everkeep production backup, export, restore, and recovery acceptance remain pending.

@@ -1,108 +1,155 @@
 # GoreeCloud Mesh Architecture
 
-## Role
+## Governing role
 
-GoreeCloud Mesh occupies the Shared Platform and Integration layer. It coordinates application- and service-level relationships without taking ownership away from specialized systems or application data authorities.
+GoreeCloud Mesh is the GoreeCloud Integral Platform System for **private networking, connectivity, reachability, service discovery, and service communication**.
 
-Mesh answers platform questions such as:
+Mesh answers questions such as:
 
-- What applications and services exist?
-- Which capabilities do they advertise?
-- What explicit relationships connect them?
-- Which dependencies are required?
-- What integration contract governs a relationship?
-- What is the current operational state of a dependency?
-- What could be affected if a dependency becomes unavailable?
-- Is a requested interaction explicitly permitted by the registered relationship model?
+- How can an authorized GoreeCloud device, service, user, site, or infrastructure component securely reach another?
+- Which service endpoints and reachability capabilities are currently advertised?
+- Which approved transport or network path can carry a request or bounded evidence record?
+- What network/reachability context is available to an authorized consumer?
+- Which service-communication dependencies may be affected when a path or endpoint becomes unavailable?
 
-## Authority boundaries
+Mesh transports information. It does not become authoritative for the meaning or synchronization state of the information it carries.
 
-Mesh does not become a universal administrator.
+## GoreeCloud Sync boundary
 
-- **GoreeCloud Manager** remains the central administration and operational-management application.
+GoreeCloud Sync is a separate Integral Platform System. Sync owns the platform-wide synchronization and state-coordination responsibilities that were historically mixed into parts of the Mesh design.
+
+Sync, not Mesh, owns authority for:
+
+- cross-device and application-to-application synchronization;
+- offline-first state replication;
+- change tracking and delta synchronization;
+- synchronization queues, retry/recovery behavior, and synchronization health;
+- synchronization policy and selective/permission-aware replication;
+- shared synchronization event contracts and event propagation;
+- conflict detection and resolution;
+- authoritative-version and reconciliation decisions;
+- cross-device continuity and synchronization state restoration.
+
+A Mesh path may carry Sync traffic or Sync evidence. That transport does not transfer Sync authority into Mesh.
+
+## Other authority boundaries
+
+Mesh does not become a universal administrator or a substitute for another system.
+
+- **GoreeCloud Manager** remains the central administration and operational-management authority.
 - **GoreeCloud Monitoring** remains authoritative for monitoring collection and health evidence.
-- **GoreeCloud Network** remains authoritative for network connectivity and network policy implementation.
+- **GoreeCloud Network** remains authoritative for network connectivity implementation and network policy where that product boundary applies.
 - **GoreeCloud Gateway** remains authoritative for ingress, proxying, traffic routing, and service-access enforcement at its boundary.
-- **GoreeCloud Identity** remains authoritative for identities, authentication, SSO, and identity-provider behavior.
-- **Wardveil Security** defines platform security and evidence contracts.
-- **Privacy Shield** defines privacy-control, data-minimization, and privacy-evidence contracts.
-- **Everkeep** defines resilience, recovery, preservation, portability, continuity, succession, and digital-legacy contracts.
-- **Glaze UI** defines the design and interaction contract for Mesh Console and other user-facing Mesh surfaces.
+- **GoreeCloud Identity** remains authoritative for identities, authentication, authorization, SSO, accounts, devices, sessions, credentials, and delegated authority.
+- **Wardveil Security** defines platform security, trust, protection, and security-evidence contracts.
+- **Privacy Shield** defines privacy-control, data-minimization, purpose/retention, and privacy-evidence contracts.
+- **Everkeep** defines resilience, recovery, preservation, portability, continuity, succession, and recovery-evidence contracts.
+- **Glaze UI** defines the design and interaction contract for Mesh Center and other user-facing Mesh surfaces.
+- **GoreeCloud Sync** defines synchronization, state coordination, reconciliation, and cross-device continuity contracts.
 
-Mesh coordinates these systems through documented contracts and adapters; it does not duplicate their implementation.
+Mesh may expose or transport bounded information from those systems through documented contracts. It must not manufacture, merge, strengthen, or silently reinterpret their authority.
 
-## Core components
+## Current Development source transition
+
+The repository was originally built around a broader coordination-fabric model. Current source therefore contains Registry, Graph, Policy, and Events functions whose historical names and behavior extend beyond the adopted Mesh connectivity/reachability target.
+
+Those functions remain real Development-stage source and must not be described as already removed. They are subject to controlled decomposition or reclassification:
+
+- functionality necessary for service discovery, reachability, endpoint metadata, transport, network-path context, or bounded evidence delivery may remain in Mesh;
+- synchronization state, replication, reconciliation, cross-device continuity, shared synchronization event contracts, and conflict resolution belong to GoreeCloud Sync;
+- administration and broad operational control belong to GoreeCloud Manager;
+- producer-domain security, privacy, identity, recovery, and presentation truth remains with the applicable producer authority.
+
+No compatibility-preserving migration may use the existence of historical Mesh code as justification to keep obsolete authority boundaries indefinitely.
+
+## Current source components
 
 ### Mesh Registry
 
-Stores service identity, kind, version, endpoint metadata, capabilities, declared dependencies, health state, labels, and platform-conformance state. Registration metadata is coordination data only and should not contain application payloads, message content, user files, credentials, tokens, or other unnecessary private activity.
+The current Registry stores service identity, kind, version, endpoint metadata, capabilities, declared dependencies, health context, labels, and platform-conformance state.
+
+For the adopted architecture, the Registry is primarily a **service discovery and reachability registry**. Registration metadata must remain minimized and must not contain application payloads, message content, user files, credentials, tokens, synchronization state, or unnecessary private activity.
 
 ### Mesh Graph
 
-Builds explicit relationship and dependency edges from Registry records. The first implementation supports reverse dependency-impact traversal so administrators and consuming systems can determine which registered components may be affected by an unavailable dependency.
+The existing Graph builds explicit relationship and dependency edges and supports reverse dependency-impact traversal. This remains a Development source capability.
+
+Graph information may continue where it describes reachability, endpoint/service dependencies, or transport impact. Application-state dependency orchestration, synchronization topology, and reconciliation semantics must migrate to the appropriate authority rather than expanding Mesh.
 
 ### Mesh Policy
 
-Evaluates requested service-to-service capability use against explicit enabled relationships. The initial policy model fails closed when a source or target is unknown, a target is unavailable, a capability is not advertised, or no relationship authorizes the capability.
+The existing policy evaluator checks registered service relationships and advertised capabilities and fails closed on unknown/unavailable sources or targets and missing enabled relationships.
 
-Mesh Policy is not a replacement for Identity authorization, Gateway access controls, Network policy, application permissions, or Wardveil Security enforcement. It is the service-relationship policy layer and should compose with those authorities.
+Mesh Policy may serve bounded connectivity/service-communication admission metadata, but it is not a replacement for Identity authorization, Gateway access controls, Network policy, application permissions, Privacy Shield decisions, Wardveil Security enforcement, or GoreeCloud Sync synchronization policy.
 
 ### Mesh Events
 
-Publishes bounded lifecycle events when services and relationships change. The initial implementation is an in-process event bus. External durable delivery, replay, ordering guarantees, federation, and notification adapters remain future milestones.
+The existing in-process event bus publishes Registry and relationship lifecycle events. Those local lifecycle signals are implementation behavior, not a grant of platform-wide state-coordination authority.
 
-### Mesh Nodes
+Durable synchronization event propagation, shared synchronization event contracts, replay/reconciliation behavior, and cross-application state propagation belong to GoreeCloud Sync. Mesh may later provide an approved transport path for such events without becoming their semantic authority.
 
-A node is a registered application, service, client-facing backend, platform component, or other approved Mesh participant represented by a Registry service record. Future node records may include cryptographic service identity and attested runtime metadata only after Identity and Wardveil contracts are defined.
+### Mesh Nodes and Connections
 
-### Mesh Connections
+Nodes and connections represent service participants and explicit communication relationships. Their target role is to support discovery, reachability, transport, and observable service-communication context.
 
-Connections are explicit relationship records between registered nodes. A relationship contains source, target, type, optional capability, optional contract identifier, required/optional dependency semantics, enabled state, and update time.
+They must not silently become a second synchronization graph or a general-purpose application workflow engine.
 
-### Mesh Console
+### Mesh Evidence Transport
 
-Mesh Console will provide a Glaze UI administrative experience for the registry, graph, relationships, policy decisions, dependency impact, integration status, platform conformance, and operational state. Console completion is not claimed by this milestone.
+Mesh currently contains evidence-envelope, producer binding, receipt, and consumer-view source foundations. Evidence transport may remain a Mesh service-communication capability when it is bounded, authenticated, minimized, and producer-authoritative.
 
-## Initial data model
+Transport validity never turns Mesh into the authority for security, privacy, identity, recovery, synchronization, or Glaze UI claims.
 
-The first milestone deliberately keeps the model small and portable. Durable state is written atomically as JSON with restrictive file permissions. This avoids introducing a database dependency before the multi-node, concurrency, scale, recovery, and migration requirements justify one.
+### Mesh Center
 
-State contains:
+Mesh Center is the planned Glaze UI surface for Mesh-specific connectivity, discovery, reachability, service communication, evidence transport, health/path context, and migration/conformance visibility.
 
-- `services`: registered service records keyed by service ID.
-- `relationships`: explicit relationship records keyed by relationship ID.
+GoreeCloud Manager remains the broader administration authority. Mesh Center must not become a competing universal administration plane.
 
-The storage implementation can be replaced later without changing the public Mesh model or API contract.
+## Discovery and reachability
 
-## Discovery
+Service discovery returns registered services/endpoints that advertise the requested capability and are not explicitly unavailable. Discovery does not grant authorization.
 
-Capability discovery returns registered services that advertise the requested capability and are not explicitly `unavailable`. Discovery does not itself grant permission to use the service. A caller must still satisfy the relevant relationship, Identity, Gateway, Network, application, and Wardveil controls.
+A caller must still satisfy all applicable Identity, Gateway, Network, application, Wardveil Security, Privacy Shield, Manager, and Sync boundaries. Reachability means that a path or endpoint is available; it does not mean the caller is authorized to use application data or synchronize state.
 
 ## Failure isolation
 
-Mesh is designed to help the platform degrade safely rather than create more coupling. Applications remain independently deployable and recoverable. A Mesh outage must not automatically destroy application-owned data or make independently operable applications irrecoverable.
+Mesh must improve connectivity without becoming an unnecessary universal failure domain. Applications remain independently deployable and recoverable where their contracts allow it.
 
-The dependency graph is descriptive and coordinating; it should not become a hidden runtime dependency for every request unless a future contract explicitly requires that behavior and provides a failure-safe design.
+A Mesh outage must not automatically destroy application-owned data, erase synchronization state owned by Sync, or make independently operable applications irrecoverable. Any hard runtime dependency on Mesh requires explicit availability, degradation, recovery, and failure-safe design.
 
 ## Privacy and security posture
 
-The initial API listens on loopback by default. No public exposure is authorized by this repository foundation. Authentication and authorization adapters are intentionally not faked; production use requires a real GoreeCloud Identity and Wardveil-backed trust model.
+The current API listens on loopback by default. No public runtime exposure is authorized by this source foundation.
 
-Mesh metadata must remain data-minimized. It must not become a centralized store of private application content merely because it connects applications.
+Production use requires accepted GoreeCloud Identity, Wardveil Security, Privacy Shield, and applicable Gateway/Network controls. Mesh metadata must remain data-minimized and must not become a centralized store of private application content merely because it connects services.
 
 ## Resilience
 
-Atomic JSON persistence provides crash-safe single-file replacement for the first milestone. Everkeep integration will define backup classification, restore evidence, migration/export requirements, corruption handling, and recovery acceptance before Stable qualification.
+Atomic JSON persistence provides crash-safe single-file replacement for current Development stores. Everkeep integration must define backup classification, restore evidence, migration/export requirements, corruption handling, and recovery acceptance before Stable qualification.
 
-## Planned evolution
+GoreeCloud Sync is not a backup authority, and Mesh is not a synchronization or backup authority.
 
-1. Identity-backed service identities and authenticated registration.
-2. Wardveil relationship-policy and evidence integration.
-3. Privacy Shield metadata classification and retention controls.
-4. Everkeep backup/export/restore evidence.
-5. Monitoring health adapters and health-evidence provenance.
-6. Gateway and Network adapters for connection enforcement state.
-7. Durable event journal and external event subscribers.
-8. Versioned contract catalog and compatibility evaluation.
-9. Mesh Console using the current Stable Glaze UI contract.
-10. Multi-node/federated coordination only after consistency, recovery, and failure semantics are explicitly approved.
+## Platform Contract 0.3 boundary
+
+The repository-root `goreecloud.platform.yaml` is the controlling machine-readable declaration under GoreeCloud Platform Contract 0.3.
+
+Mesh implements the Mesh authority itself, so the Mesh self-slot is `not-applicable-justified`. GoreeCloud Sync is a distinct required platform-system dimension and remains blocked until an explicit Mesh-to-Sync reachability/transport integration is implemented, validated, and accepted.
+
+The repository remains Development/nonconformant. Contract adoption does not establish production runtime acceptance.
+
+## Planned migration and evolution
+
+1. Preserve and harden private networking, reachability, discovery, service communication, and bounded evidence-transport functions that belong in Mesh.
+2. Inventory Registry/Graph/Policy/Event source behavior against the adopted eight-system authority matrix.
+3. Move or replace synchronization/state-coordination semantics with explicit GoreeCloud Sync contracts rather than duplicate them in Mesh.
+4. Integrate Identity-backed service identities and authenticated reachability/service registration.
+5. Integrate Wardveil trust and security evidence at the transport/reachability boundary.
+6. Integrate Privacy Shield metadata classification, minimization, and retention controls.
+7. Complete Everkeep backup/export/restore evidence for Mesh-owned state.
+8. Complete Monitoring, Gateway, and Network adapters for observed connectivity/enforcement state where applicable.
+9. Define a bounded Mesh-to-Sync transport/reachability contract with no authority transfer.
+10. Reconcile Mesh Center to the current Stable Glaze UI contract and the Manager administration boundary.
+11. Add multi-node/federated reachability only after consistency, recovery, security, and failure semantics are explicitly approved.
+
+Every migration must preserve verified current behavior long enough for a controlled transition, but obsolete coordination authority must not survive merely for compatibility convenience.
