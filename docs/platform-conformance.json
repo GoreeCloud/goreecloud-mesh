@@ -18,7 +18,7 @@
       "required": true,
       "state": "pending",
       "evidence": [
-        "GoreeCloud Manager remains the central administration and operational-management authority while Mesh remains the coordination authority.",
+        "GoreeCloud Manager remains the central administration and operational-management authority while Mesh remains the connectivity, reachability, discovery, and service-communication authority.",
         "The repository documents the authority boundary explicitly and does not transfer Manager administrative authority into Mesh.",
         "A direct Manager-to-Mesh operational integration remains planned and is not treated as implemented or Stable-gate-satisfied."
       ]
@@ -57,7 +57,7 @@
       "evidence": [
         "Mesh catalogs GoreeCloud Privacy Shield as the privacy authority and records the platform privacy contract as the expected source for adapter/conformance integration.",
         "The platform-status view preserves Privacy Shield evidence as a separate privacy-authority record and cannot infer privacy acceptance from adjacent Mesh or Wardveil state.",
-        "The architecture limits Mesh to coordination metadata, prohibits unnecessary application payload centralization, and includes source-level privacy/retention governance; approved Privacy Shield runtime adapter and retention evidence remain pending."
+        "The architecture limits Mesh to minimized connectivity, discovery, relationship, and transport metadata; prohibits unnecessary application payload centralization; and includes source-level privacy/retention governance. Approved Privacy Shield runtime adapter and retention evidence remain pending."
       ]
     },
     "everkeep": {
@@ -72,18 +72,28 @@
         "The platform-status view keeps Everkeep source status fail-closed and does not treat durable state persistence as recovery acceptance.",
         "The initial store uses atomic durable JSON persistence and source-level recovery readiness requires export, backup, restore, and verification evidence; production backup/export/restore and recovery acceptance remain pending."
       ]
+    },
+    "sync": {
+      "required": true,
+      "state": "pending",
+      "evidence": [
+        "The adopted eight-system architecture assigns synchronization, state coordination, event propagation, shared synchronization contracts, conflict handling, and cross-device continuity to GoreeCloud Sync rather than Mesh.",
+        "docs/architecture.md defines Mesh as the connectivity/reachability/service-communication authority and treats existing coordination-oriented Registry/Graph/Policy/Event source surfaces as transitional where they exceed that boundary.",
+        "No accepted Mesh-to-Sync runtime reachability/transport contract or production acceptance is claimed by the current source baseline."
+      ]
     }
   },
   "acceptance_gates": [
     "Direct GoreeCloud Manager operational integration",
     "GoreeCloud Identity-backed service authentication and authorization",
+    "Explicit GoreeCloud Sync reachability/transport integration with no authority transfer",
+    "Controlled decomposition or reclassification of coordination-oriented Mesh source behavior that overlaps GoreeCloud Sync authority",
     "Wardveil Security contract implementation and runtime evidence",
     "Privacy Shield contract implementation and retention/privacy evidence",
     "Everkeep target backup/export/restore, freshness, exact-revision, and recovery evidence",
     "Current Stable Glaze UI administrative product interface implementation and accessibility acceptance",
     "Monitoring health adapter and health-evidence provenance",
     "Gateway and Network enforcement-state adapters",
-    "Durable external event delivery semantics",
     "Target-environment runtime, rollback, backup, restore, and failure-mode acceptance",
     "Production deployment and publication approval"
   ]
