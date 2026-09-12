@@ -1,6 +1,6 @@
-schema_version: '0.2'
+schema_version: '0.3'
 component:
-  type: service
+  type: platform-system
   id: goreecloud-mesh
   product_name: GoreeCloud Mesh
   repository: GoreeCloud/goreecloud-mesh
@@ -57,7 +57,7 @@ platform_systems:
     - WEBSITE.md
     - website/glaze.lock.json
     - docs/platform-conformance.json
-    notes: The standalone public Mesh website declares a pinned Glaze UI 2.2.0 consumer state, while the current Platform Contract baseline is 1.1.0 and the administrative Mesh product interface plus complete product-level Glaze acceptance remain unfinished.
+    notes: The standalone public Mesh website declares a pinned Glaze UI 2.2.0 consumer state, while the current Platform Contract baseline is 1.3.0 and the administrative Mesh product interface plus complete product-level Glaze acceptance remain unfinished.
   mesh:
     result: not-applicable-justified
     version: '0.3'
@@ -77,6 +77,13 @@ platform_systems:
     - docs/identity-trust.md
     - docs/platform-conformance.json
     notes: A source-level verifier and scoped service-identity trust boundary exist, while a deployed GoreeCloud Identity verifier, production credential mechanism, and current-contract acceptance remain pending.
+  sync:
+    result: applicable-blocked
+    version: null
+    evidence:
+    - README.md
+    - docs/api.md
+    notes: GoreeCloud Mesh must provide discovery, reachability, capability coordination, and event or service transport for GoreeCloud Sync without becoming synchronization authority. No accepted Mesh-to-Sync runtime transport/coordination integration is established by the current main source baseline.
 health:
   health_endpoint: /healthz
   readiness_endpoint: null
@@ -99,11 +106,11 @@ continuity:
     - Preserve replaceable storage and documented contracts so Mesh does not become an unrecoverable dependency or proprietary data silo.
 external_dependencies: []
 compatibility:
-  platform_contract: '0.2'
-  glaze_ui_required: 1.1.0
+  platform_contract: '0.3'
+  glaze_ui_required: 1.3.0
   requires:
-  - goreecloud-platform-contract==0.2
-  - glaze-ui==1.1.0
+  - goreecloud-platform-contract==0.3
+  - glaze-ui==1.3.0
   provides:
   - mesh-api-v1
 evidence:
@@ -122,10 +129,11 @@ conformance:
   blockers:
   - GoreeCloud Mesh remains in Development and is not production or Stable accepted.
   - Direct GoreeCloud Manager integration remains planned.
+  - GoreeCloud Sync transport/coordination integration and production acceptance remain pending.
   - A deployed GoreeCloud Identity verifier and production authorization path remain pending.
   - Wardveil Security and Privacy Shield runtime adapter evidence and acceptance remain pending.
   - Everkeep production backup, export, restore, and recovery acceptance remain pending.
   - The administrative Mesh product interface and product-level Glaze UI acceptance remain incomplete.
-  - Current Platform Contract Glaze UI baseline reconciliation and acceptance remain incomplete.
+  - Current Stable Glaze UI 1.3.0 reconciliation and acceptance remain incomplete.
   - Production Monitoring, Gateway, and Network adapters remain pending.
   - Target-environment runtime, rollback, failure-mode, publication, and production acceptance remain pending.
