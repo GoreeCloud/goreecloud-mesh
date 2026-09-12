@@ -2,6 +2,7 @@ package mesh
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -35,6 +36,7 @@ type DurableSubscriberCheckpoints struct {
 	mu          sync.RWMutex
 	path        string
 	checkpoints map[string]uint64
+	replayGate  chan struct{}
 }
 
 func NewDurableSubscriberCheckpoints(path string) (*DurableSubscriberCheckpoints, error) {
@@ -44,11 +46,26 @@ func NewDurableSubscriberCheckpoints(path string) (*DurableSubscriberCheckpoints
 	store := &DurableSubscriberCheckpoints{
 		path:        path,
 		checkpoints: map[string]uint64{},
+		replayGate:  make(chan struct{}, 1),
 	}
+	store.replayGate <- struct{}{}
 	if err := store.load(); err != nil {
 		return nil, err
 	}
 	return store, nil
+}
+
+func (s *DurableSubscriberCheckpoints) acquireReplay(ctx context.Context) error {
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	case <-s.replayGate:
+		return nil
+	}
+}
+
+func (s *DurableSubscriberCheckpoints) releaseReplay() {
+	s.replayGate <- struct{}{}
 }
 
 func (s *DurableSubscriberCheckpoints) Acknowledge(subscriberID string, checkpoint uint64, journal *DurableEventJournal) error {
