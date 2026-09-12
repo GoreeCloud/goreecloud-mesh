@@ -19,10 +19,12 @@ Checkpoint state survives restart, is strictly decoded, rejects symlink-backed o
 
 `ReplaySubscriber` composes the journal and checkpoint store for one bounded in-process consumer pass. It loads the subscriber's durable checkpoint, replays a bounded batch, invokes the supplied handler in offset order, and advances the durable checkpoint only after that handler returns successfully.
 
+Replay passes sharing one `DurableSubscriberCheckpoints` instance are serialized through a context-aware in-process replay gate. A second pass therefore cannot concurrently invoke handlers against the same checkpoint store while another pass is progressing it, and a caller waiting for replay ownership can still fail promptly when its context is cancelled or reaches its deadline.
+
 If a handler fails, that event is **not acknowledged**. A later call may therefore present the same event again before later offsets. If checkpoint persistence fails, the runner stops immediately rather than reporting progress that was not durably recorded. If the subscriber checkpoint has fallen behind retained history, replay fails closed before the handler runs.
 
 This runner establishes neither exactly-once nor at-least-once delivery. Successful handler return is only the local callback boundary supplied to this source primitive; it does not prove external persistence, side-effect completion, downstream acknowledgement, or cross-process delivery.
 
 ## Acceptance boundary
 
-These are **single-runtime state and replay primitives only**. They do not establish an external replay endpoint, remote acknowledgement authority, authenticated subscriber transport, retry/backoff scheduling, dead-letter handling, exactly-once or at-least-once delivery, multi-process locking, shared-filesystem correctness, cross-host ordering, federation, production retention approval, production deployment, production acceptance, or Stable qualification. Those remain separate FR-008 acceptance gates.
+These are **single-runtime state and replay primitives only**. They do not establish an external replay endpoint, remote acknowledgement authority, authenticated subscriber transport, retry/backoff scheduling, dead-letter handling, exactly-once or at-least-once delivery, multi-process locking, shared-filesystem correctness, cross-host ordering, federation, production retention approval, production deployment, production acceptance, or Stable qualification. The in-process replay gate is deliberately not a multi-process or distributed lock. Those remain separate FR-008 acceptance gates.
