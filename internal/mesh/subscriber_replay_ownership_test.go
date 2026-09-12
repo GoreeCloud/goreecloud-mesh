@@ -79,8 +79,7 @@ func TestReplayOwnershipRejectsSymlinkBackedLockPath(t *testing.T) {
 		t.Fatal("symlink-backed replay ownership lock must fail closed")
 	}
 
-	lease, err := store.acquireReplay(context.Background())
-	if err != nil {
+	if err := store.acquireReplay(context.Background()); err != nil {
 		t.Fatalf("failed process-lock acquisition must release in-process ownership: %v", err)
 	}
 	store.releaseReplay()
