@@ -1,6 +1,7 @@
 package mesh
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -107,8 +108,17 @@ func (j *DurableEventJournal) load() error {
 	}
 
 	var state durableEventJournalState
-	if err := json.Unmarshal(body, &state); err != nil {
+	decoder := json.NewDecoder(bytes.NewReader(body))
+	decoder.DisallowUnknownFields()
+	if err := decoder.Decode(&state); err != nil {
 		return fmt.Errorf("decode durable event journal: %w", err)
+	}
+	var trailing any
+	if err := decoder.Decode(&trailing); !errors.Is(err, io.EOF) {
+		if err == nil {
+			return errors.New("decode durable event journal: trailing JSON value is not allowed")
+		}
+		return fmt.Errorf("decode durable event journal trailing data: %w", err)
 	}
 	if state.Schema != EventJournalSchemaV1 {
 		return fmt.Errorf("unsupported durable event journal schema %q", state.Schema)
