@@ -135,7 +135,6 @@ func eventDataString(data map[string]any, key string) (string, error) {
 	if !ok {
 		return "", fmt.Errorf("event data field %q must be a string", key)
 	}
-	text = strings.TrimSpace(text)
 	if err := validateEventText("data."+key, text, maxEventValueRunes); err != nil {
 		return "", err
 	}
@@ -145,6 +144,9 @@ func eventDataString(data map[string]any, key string) (string, error) {
 func validateEventText(name, value string, maxRunes int) error {
 	if value == "" {
 		return fmt.Errorf("event %s is required", name)
+	}
+	if strings.TrimSpace(value) != value {
+		return fmt.Errorf("event %s must use canonical text without surrounding whitespace", name)
 	}
 	if !utf8.ValidString(value) {
 		return fmt.Errorf("event %s must be valid UTF-8", name)
