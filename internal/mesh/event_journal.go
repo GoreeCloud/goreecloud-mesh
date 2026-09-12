@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math"
 	"os"
 	"path/filepath"
 	"sync"
@@ -21,6 +22,7 @@ const (
 var (
 	ErrEventCheckpointTooOld = errors.New("event checkpoint is older than retained history")
 	ErrEventCheckpointAhead  = errors.New("event checkpoint is ahead of the journal")
+	ErrEventOffsetExhausted  = errors.New("event journal offset space is exhausted")
 )
 
 type DurableEventRecord struct {
@@ -159,6 +161,9 @@ func (j *DurableEventJournal) Append(event model.Event) (DurableEventRecord, err
 
 	j.mu.Lock()
 	defer j.mu.Unlock()
+	if j.nextOffset == math.MaxUint64 {
+		return DurableEventRecord{}, ErrEventOffsetExhausted
+	}
 
 	record := DurableEventRecord{Offset: j.nextOffset, Event: cloneEvent(event)}
 	candidate := append(append([]DurableEventRecord(nil), j.entries...), record)
