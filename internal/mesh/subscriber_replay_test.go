@@ -5,6 +5,7 @@ import (
 	"errors"
 	"path/filepath"
 	"testing"
+	"time"
 )
 
 func TestReplaySubscriberAcknowledgesOnlySuccessfulEvents(t *testing.T) {
@@ -112,5 +113,79 @@ func TestReplaySubscriberFailsClosedWhenCheckpointFallsBehindRetention(t *testin
 	}
 	if called {
 		t.Fatal("handler ran despite missing retained history")
+	}
+}
+
+func TestReplaySubscriberSerializesCheckpointOwnershipWithinRuntime(t *testing.T) {
+	dir := t.TempDir()
+	journal, err := NewDurableEventJournal(filepath.Join(dir, "events.json"), 8)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := journal.Append(journalEvent(t, 1)); err != nil {
+		t.Fatal(err)
+	}
+	checkpoints, err := NewDurableSubscriberCheckpoints(filepath.Join(dir, "checkpoints.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	started := make(chan struct{})
+	release := make(chan struct{})
+	firstDone := make(chan error, 1)
+	go func() {
+		_, _, err := ReplaySubscriber(
+			context.Background(),
+			"manager-event-consumer",
+			1,
+			journal,
+			checkpoints,
+			func(context.Context, DurableEventRecord) error {
+				close(started)
+				<-release
+				return nil
+			},
+		)
+		firstDone <- err
+	}()
+
+	<-started
+	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
+	defer cancel()
+	secondCalled := false
+	processed, checkpoint, err := ReplaySubscriber(
+		ctx,
+		"manager-event-consumer",
+		1,
+		journal,
+		checkpoints,
+		func(context.Context, DurableEventRecord) error {
+			secondCalled = true
+			return nil
+		},
+	)
+	if !errors.Is(err, context.DeadlineExceeded) {
+		close(release)
+		t.Fatalf("expected context deadline while replay ownership was held, got %v", err)
+	}
+	if processed != 0 || checkpoint != 0 {
+		close(release)
+		t.Fatalf("processed=%d checkpoint=%d, want 0/0 while replay ownership is held", processed, checkpoint)
+	}
+	if secondCalled {
+		close(release)
+		t.Fatal("second replay handler ran while another replay pass owned checkpoint progression")
+	}
+
+	close(release)
+	if err := <-firstDone; err != nil {
+		t.Fatalf("first replay failed: %v", err)
+	}
+	stored, ok, err := checkpoints.Checkpoint("manager-event-consumer")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !ok || stored != 1 {
+		t.Fatalf("stored checkpoint=%d ok=%v, want 1/true", stored, ok)
 	}
 }
