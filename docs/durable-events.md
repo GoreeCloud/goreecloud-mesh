@@ -3,7 +3,7 @@
 **Roadmap:** FR-008  
 **Lifecycle:** Development source candidate
 
-This source slice introduces bounded single-runtime durable event journal and subscriber-checkpoint primitives as the first persistence layer for future Mesh replay and checkpoint delivery. It does not change the existing live SSE endpoint into a durable stream and does not claim cross-host delivery.
+This source slice introduces bounded single-runtime durable event journal, subscriber-checkpoint, and replay-runner primitives as the first persistence layer for future Mesh replay and checkpoint delivery. It does not change the existing live SSE endpoint into a durable stream and does not claim cross-host delivery.
 
 The journal assigns a monotonic durable offset separate from the existing process-local `evt-<sequence>` event ID. Existing event envelopes remain governed by `goreecloud.mesh.event.v1`, remain closed/privacy-minimized, and keep `authority_transfer: false`.
 
@@ -15,8 +15,14 @@ The journal persists its state atomically to a private file, reloads and validat
 
 Checkpoint state survives restart, is strictly decoded, rejects symlink-backed or non-private state, is bounded by subscriber count and file size, and does not mutate the event journal itself.
 
-This is a **state primitive only**. Calling `Acknowledge` records a replay position supplied by a future authorized delivery path; it does not prove that a subscriber actually received, processed, persisted, or acted on an event. No acknowledgement endpoint or remote caller authority is established by this source slice.
+## Bounded subscriber replay runner
 
-## Remaining acceptance gates
+`ReplaySubscriber` composes the journal and checkpoint store for one bounded in-process consumer pass. It loads the subscriber's durable checkpoint, replays a bounded batch, invokes the supplied handler in offset order, and advances the durable checkpoint only after that handler returns successfully.
 
-This foundation intentionally does **not** establish an external replay endpoint, external subscriber acknowledgement transport, retry/backoff, dead-letter handling, exactly-once or at-least-once delivery, external publisher authority, multi-process locking, shared-filesystem correctness, cross-host ordering, federation, production retention approval, production deployment, or Stable qualification. Those remain separate FR-008 acceptance gates.
+If a handler fails, that event is **not acknowledged**. A later call may therefore present the same event again before later offsets. If checkpoint persistence fails, the runner stops immediately rather than reporting progress that was not durably recorded. If the subscriber checkpoint has fallen behind retained history, replay fails closed before the handler runs.
+
+This runner establishes neither exactly-once nor at-least-once delivery. Successful handler return is only the local callback boundary supplied to this source primitive; it does not prove external persistence, side-effect completion, downstream acknowledgement, or cross-process delivery.
+
+## Acceptance boundary
+
+These are **single-runtime state and replay primitives only**. They do not establish an external replay endpoint, remote acknowledgement authority, authenticated subscriber transport, retry/backoff scheduling, dead-letter handling, exactly-once or at-least-once delivery, multi-process locking, shared-filesystem correctness, cross-host ordering, federation, production retention approval, production deployment, production acceptance, or Stable qualification. Those remain separate FR-008 acceptance gates.
