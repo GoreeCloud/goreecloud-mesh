@@ -161,3 +161,63 @@ func TestDurableEventJournalRejectsInvalidEventAndDefensiveCopiesData(t *testing
 		t.Fatal("replay result must not mutate retained journal state")
 	}
 }
+
+func TestDurableEventJournalRejectsSymlinkState(t *testing.T) {
+	dir := t.TempDir()
+	target := filepath.Join(dir, "target.json")
+	if err := os.WriteFile(target, []byte("{}"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	link := filepath.Join(dir, "events.json")
+	if err := os.Symlink(target, link); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := NewDurableEventJournal(link, 4); err == nil {
+		t.Fatal("journal must reject symlink-backed state")
+	}
+}
+
+func TestDurableEventJournalRejectsInsecurePermissions(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "events.json")
+	journal, err := NewDurableEventJournal(path, 4)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := journal.Append(journalEvent(t, 1)); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Chmod(path, 0o640); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := NewDurableEventJournal(path, 4); err == nil {
+		t.Fatal("journal must reject state readable by group or other")
+	}
+}
+
+func TestDurableEventJournalPersistsPrivateRegularFile(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "events.json")
+	journal, err := NewDurableEventJournal(path, 4)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := journal.Append(journalEvent(t, 1)); err != nil {
+		t.Fatal(err)
+	}
+	info, err := os.Lstat(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !info.Mode().IsRegular() {
+		t.Fatalf("journal mode = %v, want regular file", info.Mode())
+	}
+	if info.Mode().Perm() != 0o600 {
+		t.Fatalf("journal permissions = %04o, want 0600", info.Mode().Perm())
+	}
+	matches, err := filepath.Glob(filepath.Join(filepath.Dir(path), ".event-journal-*.tmp"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(matches) != 0 {
+		t.Fatalf("temporary journal files were not cleaned up: %v", matches)
+	}
+}
