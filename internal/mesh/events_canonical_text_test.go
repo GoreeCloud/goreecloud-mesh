@@ -21,7 +21,7 @@ func canonicalServiceEvent() model.Event {
 
 func TestEventContractRejectsSurroundingWhitespaceInIdentityFields(t *testing.T) {
 	for name, mutate := range map[string]func(*model.Event){
-		"source": func(event *model.Event) { event.Source = " identity" },
+		"source":  func(event *model.Event) { event.Source = " identity" },
 		"subject": func(event *model.Event) { event.Subject = "identity " },
 	} {
 		t.Run(name, func(t *testing.T) {
