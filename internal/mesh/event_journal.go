@@ -134,6 +134,9 @@ func (j *DurableEventJournal) load() error {
 	if len(state.Entries) > j.maxEntries {
 		return errors.New("durable event journal exceeds configured retention")
 	}
+	if len(state.Entries) == 0 && state.NextOffset != 1 {
+		return errors.New("durable event journal cannot have missing retained history with an advanced next offset")
+	}
 
 	var previous uint64
 	for index, record := range state.Entries {
