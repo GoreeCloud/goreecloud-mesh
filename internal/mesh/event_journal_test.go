@@ -6,6 +6,8 @@ import (
 	"path/filepath"
 	"testing"
 	"time"
+
+	"github.com/GoreeCloud/goreecloud-mesh/internal/model"
 )
 
 func journalEvent(t *testing.T, sequence uint64) model.Event {
