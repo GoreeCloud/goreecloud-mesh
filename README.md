@@ -1,49 +1,71 @@
 # GoreeCloud Mesh
 
-GoreeCloud Mesh is the application and service coordination fabric of the GoreeCloud ecosystem. It provides a native GoreeCloud-owned operational layer for service and capability discovery, relationship and dependency modeling, policy-aware coordination, lifecycle state, events, health-aware impact analysis, evidence transport, and application interoperability.
+GoreeCloud Mesh is the Integral Platform System for private networking, connectivity, reachability, service discovery, and service communication across GoreeCloud. Mesh establishes and describes approved paths by which GoreeCloud users, devices, applications, infrastructure, networks, and services can reach one another.
 
-Mesh does not replace GoreeCloud Manager, Monitor, Network, Gateway, GoreeCloud Identity, Glaze UI, Wardveil Security, Privacy Shield, or Everkeep. It coordinates application- and service-level relationships across those specialized systems while preserving their authority boundaries.
+**Authority boundary:** GoreeCloud Mesh transports information. **GoreeCloud Sync** owns synchronization and state coordination: change tracking, state replication, delta synchronization, synchronization queues/retries, shared synchronization event contracts, conflict detection/resolution, and cross-device/application state reconciliation. Mesh must not infer synchronization authority merely because information travels through a Mesh path.
 
-## Foundation scope
+Mesh also does not replace GoreeCloud Manager, Monitor, Network, Gateway, GoreeCloud Identity, Glaze UI, Wardveil Security, Privacy Shield, or Everkeep. Each specialized system retains its own authority.
 
-The native foundation provides:
+## Current Development source foundation
 
-- **Mesh Registry** — durable registry of applications, services, capabilities, dependencies, endpoints, health, and platform-conformance state.
-- **Mesh Graph** — explicit service relationships and transitive dependency-impact analysis.
+The repository predates the eight-system Mesh/Sync authority split and therefore still contains coordination-oriented source surfaces. They are retained as **Development-stage transitional implementation**, not as authority to compete with GoreeCloud Sync or GoreeCloud Manager.
+
+Current source includes:
+
+- **Mesh Registry** — durable records for applications/services, endpoints, capabilities, dependencies, health context, and platform-conformance metadata.
+- **Mesh Graph** — explicit service relationships and dependency-impact analysis.
 - **Mesh Policy** — fail-closed evaluation of registered relationships and requested capabilities.
-- **Mesh Events** — bounded in-process event publication for registry and relationship lifecycle changes.
+- **Mesh Events** — bounded in-process publication of Registry/relationship lifecycle events.
 - **Mesh Nodes and Connections** — service/node identity, operational state, and explicit versionable relationships.
-- **Mesh Platform Catalog and Status** — authority/contract metadata and joined integration status for GoreeCloud Identity, Glaze UI, Wardveil Security, Privacy Shield, and Everkeep without transferring their authority into Mesh.
+- **Mesh Platform Catalog and Status** — authority/contract metadata and joined integration status without transferring producer authority into Mesh.
 - **Mesh Source Attestations** — durable exact-source provenance kept independent from runtime and Stable acceptance.
 - **Mesh Runtime Evidence** — bounded runtime contract evidence bound to canonical repositories, contracts, exact revisions, and observation time.
-- **Mesh Evidence Envelopes** — durable immutable transport records for minimized producer-authoritative evidence with canonical producer/contract/authority validation, freshness, scoped subjects, minimization flags, and optional digest binding.
+- **Mesh Evidence Envelopes** — immutable transport records for minimized producer-authoritative evidence with canonical producer/contract/authority validation, freshness, scoped subjects, minimization flags, and optional digest binding.
 - **Authenticated Evidence Delivery** — `mesh.evidence.write` plus exact producer-service identity binding for ingestion, and `mesh.evidence.read` for inspection/consumer views.
-- **Evidence Subject Views** — producer/authority/assertion-separated consumer models that expose latest/current evidence without manufacturing an overall security, privacy, recovery, continuity, identity, authorization, or conformance verdict.
-- **Mesh API** — private-first HTTP interface for discovery, registration, graph inspection, platform evidence, producer evidence, and policy evaluation.
-- **Mesh Center** — planned Glaze UI administrative experience; not yet represented as complete.
+- **Evidence Subject Views** — producer/authority/assertion-separated consumer models that expose latest/current evidence without manufacturing an overall security, privacy, recovery, continuity, identity, authorization, synchronization, or conformance verdict.
+- **Mesh API** — private-first HTTP source surface for discovery, registration, reachability metadata, evidence transport, and the current transitional graph/policy endpoints.
+- **Mesh Center** — planned Glaze UI administrative experience; product-level completion is not claimed.
+
+The Registry/Graph/Policy/Event code must be decomposed or reclassified through controlled migrations where its current responsibilities exceed the adopted Mesh connectivity/reachability role. Existing source code is evidence of implementation history, not permission to override the Integral Platform architecture.
 
 ## Architecture principles
 
 - Native GoreeCloud implementation from the ground up.
-- Stable, documented APIs instead of direct database or filesystem coupling.
-- Each participating application remains authoritative for its own data and business rules.
-- Least privilege and explicit relationships rather than ambient trust.
-- Privacy-conscious metadata: Mesh records only coordination and minimized evidence information necessary to operate relationships and evidence transport.
-- Durable, atomic local state with no external database dependency in the first milestone.
-- Source provenance remains separate from runtime evidence and cannot satisfy Stable gates by itself.
-- Evidence transport validity never creates or upgrades security, privacy, recovery, continuity, identity, authentication, authorization, or design-conformance truth.
+- Private connectivity, reachability, service discovery, and service communication are Mesh responsibilities.
+- Synchronization state, replication, reconciliation, and conflict authority belong to GoreeCloud Sync.
+- Administration and operational control remain under GoreeCloud Manager where applicable.
+- Stable documented contracts are preferred over direct database or filesystem coupling.
+- Each participating application remains authoritative for its own domain data and business rules.
+- Least privilege and explicit relationships are preferred over ambient trust.
+- Privacy-conscious metadata: Mesh records only the connectivity, discovery, relationship, and minimized evidence information needed for its approved role.
+- Evidence transport validity never creates or upgrades security, privacy, recovery, continuity, identity, authentication, authorization, synchronization, or design-conformance truth.
 - A write scope is insufficient to impersonate another producer: the verified service identity must match the envelope producer.
 - Authentication proves the bound producer identity and granted Mesh scope; it does not prove the producer-domain assertion carried by an evidence envelope.
 - Expired evidence remains auditable but cannot satisfy current-evidence queries; normal expiry must not prevent restart.
-- Required GoreeCloud Manager, GoreeCloud Identity, Glaze UI, Wardveil Security, Privacy Shield, and Everkeep platform relationships or contracts remain release gates where applicable; this Development foundation does **not** claim Stable conformance.
+- Applications must degrade safely where possible; Mesh must not become an unnecessary universal failure domain.
 
-## Integral platform authority model
+## Eight-system Integral Platform authority model
 
-Mesh is the coordination authority within the seven-system GoreeCloud Integral Platform System model. GoreeCloud Manager remains the central administration and operational-management authority; GoreeCloud Identity remains the identity/authentication/authorization authority; Privacy Shield remains the privacy and data-use authority; Wardveil Security remains the security evaluation and protection authority; Everkeep remains the continuity/recovery/preservation authority; and Glaze UI remains the presentation and design-conformance authority. Mesh may coordinate relationships and validate or transport bounded evidence from applicable systems, but it cannot manufacture, transfer, or upgrade their domain truth.
+The current GoreeCloud Integral Platform model contains eight systems:
 
-The platform evidence-plane contract is `contracts/mesh.platform-evidence-plane.v1.json`. It binds each evidence producer to its canonical repository and producer-owned Mesh evidence profile while keeping `authority_transfer` false. GoreeCloud Manager is an administrative consumer/authority relationship rather than an evidence producer in that five-producer evidence-plane contract.
+- **GoreeCloud Manager** — administration and operational control.
+- **Privacy Shield** — privacy and data-use authority.
+- **Wardveil Security** — security, protection, and trust authority.
+- **Everkeep** — resilience, preservation, backup/recovery, and continuity authority.
+- **Glaze UI** — interface, interaction, and accessibility authority.
+- **GoreeCloud Mesh** — private networking, connectivity, reachability, discovery, and service communication authority.
+- **GoreeCloud Identity** — identity, authentication, authorization, account/device/session, and delegated-authority system.
+- **GoreeCloud Sync** — synchronization, state coordination, interoperability, and cross-device continuity authority.
 
-The repository-root `goreecloud.platform.yaml` is the current platform-wide machine-readable declaration for Mesh under GoreeCloud Platform Contract v0.2. `docs/platform-conformance.json` remains supplemental Mesh-specific conformance evidence and acceptance detail; it must not compete with or silently weaken the root Platform Contract declaration.
+The repository-root `goreecloud.platform.yaml` is the platform-wide machine-readable declaration for Mesh under **GoreeCloud Platform Contract 0.3**. `docs/platform-conformance.json` remains supplemental Mesh-specific evidence and acceptance detail; it must not compete with or silently weaken the root declaration.
+
+The current manifest deliberately remains `development` and `nonconformant`. GoreeCloud Sync is an explicit required evaluation dimension, and no accepted Mesh-to-Sync runtime reachability/transport integration is claimed yet.
+
+## Evidence plane
+
+The platform evidence-plane contract is `contracts/mesh.platform-evidence-plane.v1.json`. It binds each evidence producer to its canonical repository and producer-owned evidence profile while keeping `authority_transfer` false. Evidence transport through Mesh does not make Mesh authoritative for the producer domain.
+
+GoreeCloud Manager is an administrative consumer/authority relationship rather than an evidence producer in the existing producer contract. GoreeCloud Sync integration must use an explicit bounded contract when implemented; it must not be inferred from generic event or relationship transport.
 
 ## Run
 
@@ -81,11 +103,13 @@ go vet ./...
 go test ./...
 ```
 
-CI runs formatting validation, vetting, tests, build validation, and platform contract checks.
+CI runs formatting validation, vetting, tests, build validation, and Platform Contract checks.
 
 ## Release boundary
 
-This repository is in **Development**. The source now contains the durable evidence registry, authenticated read/write enforcement, producer-bound delivery receipts, consumer subject views, and reference integration contracts. It does not independently establish a deployed GoreeCloud Identity verifier, production Gateway/Network/TLS routing, DNS publication, multi-node replication, target-environment producer delivery, Mesh Center completion, or production/Stable acceptance of the integral platform systems.
+This repository is in **Development**. The current source contains substantial Registry, relationship, policy, event, evidence-registry, authenticated evidence-delivery, producer-bound receipt, consumer-view, and verifier foundations. Some of those source responsibilities predate the Mesh/Sync split and require controlled migration or reclassification.
+
+The repository does **not** independently establish a deployed GoreeCloud Identity verifier, accepted Mesh-to-Sync runtime integration, production Gateway/Network/TLS routing, multi-node production reachability, target-environment producer delivery, Mesh Center completion, or production/Stable acceptance of the Integral Platform Systems. Source implementation and CI success must not be represented as those runtime outcomes.
 
 ## License
 
