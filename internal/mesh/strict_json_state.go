@@ -68,6 +68,7 @@ func scanJSONValue(decoder *json.Decoder) error {
 			if err := scanJSONValue(decoder); err != nil {
 				return err
 			}
+		}
 		end, err := decoder.Token()
 		if err != nil {
 			return err
