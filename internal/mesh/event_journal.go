@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"sync"
@@ -11,7 +12,10 @@ import (
 	"github.com/GoreeCloud/goreecloud-mesh/internal/model"
 )
 
-const EventJournalSchemaV1 = "goreecloud.mesh.event-journal.v1"
+const (
+	EventJournalSchemaV1      = "goreecloud.mesh.event-journal.v1"
+	maxEventJournalStateBytes = 256 << 20
+)
 
 var (
 	ErrEventCheckpointTooOld = errors.New("event checkpoint is older than retained history")
@@ -58,15 +62,48 @@ func NewDurableEventJournal(path string, maxEntries int) (*DurableEventJournal, 
 }
 
 func (j *DurableEventJournal) load() error {
-	body, err := os.ReadFile(j.path)
+	info, err := os.Lstat(j.path)
 	if errors.Is(err, os.ErrNotExist) {
 		return nil
 	}
 	if err != nil {
 		return err
 	}
+	if !info.Mode().IsRegular() {
+		return errors.New("durable event journal must be a regular file")
+	}
+	if info.Mode().Perm() != 0o600 {
+		return fmt.Errorf("durable event journal permissions must be 0600, got %04o", info.Mode().Perm())
+	}
+	if info.Size() <= 0 {
+		return errors.New("durable event journal is empty or corrupt")
+	}
+	if info.Size() > maxEventJournalStateBytes {
+		return fmt.Errorf("durable event journal exceeds %d-byte state limit", maxEventJournalStateBytes)
+	}
+
+	file, err := os.Open(j.path)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+	openedInfo, err := file.Stat()
+	if err != nil {
+		return err
+	}
+	if !os.SameFile(info, openedInfo) {
+		return errors.New("durable event journal changed while being opened")
+	}
+
+	body, err := io.ReadAll(io.LimitReader(file, maxEventJournalStateBytes+1))
+	if err != nil {
+		return err
+	}
 	if len(body) == 0 {
 		return errors.New("durable event journal is empty or corrupt")
+	}
+	if len(body) > maxEventJournalStateBytes {
+		return fmt.Errorf("durable event journal exceeds %d-byte state limit", maxEventJournalStateBytes)
 	}
 
 	var state durableEventJournalState
@@ -178,27 +215,39 @@ func (j *DurableEventJournal) Bounds() (first uint64, last uint64, ok bool) {
 
 func (j *DurableEventJournal) persist(state durableEventJournalState) error {
 	dir := filepath.Dir(j.path)
-	if dir != "." {
-		if err := os.MkdirAll(dir, 0o750); err != nil {
-			return err
-		}
+	if err := os.MkdirAll(dir, 0o750); err != nil {
+		return err
 	}
 
-	tmp := j.path + ".tmp"
-	file, err := os.OpenFile(tmp, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0o600)
+	file, err := os.CreateTemp(dir, ".event-journal-*.tmp")
 	if err != nil {
 		return err
 	}
+	tmp := file.Name()
+	cleanup := func() {
+		_ = file.Close()
+		_ = os.Remove(tmp)
+	}
+	if err := file.Chmod(0o600); err != nil {
+		cleanup()
+		return err
+	}
+
 	encoder := json.NewEncoder(file)
 	encoder.SetIndent("", "  ")
 	if err := encoder.Encode(state); err != nil {
-		file.Close()
-		_ = os.Remove(tmp)
+		cleanup()
 		return err
 	}
+	if stat, err := file.Stat(); err != nil {
+		cleanup()
+		return err
+	} else if stat.Size() > maxEventJournalStateBytes {
+		cleanup()
+		return fmt.Errorf("durable event journal exceeds %d-byte state limit", maxEventJournalStateBytes)
+	}
 	if err := file.Sync(); err != nil {
-		file.Close()
-		_ = os.Remove(tmp)
+		cleanup()
 		return err
 	}
 	if err := file.Close(); err != nil {
@@ -208,6 +257,15 @@ func (j *DurableEventJournal) persist(state durableEventJournalState) error {
 	if err := os.Rename(tmp, j.path); err != nil {
 		_ = os.Remove(tmp)
 		return err
+	}
+
+	directory, err := os.Open(dir)
+	if err != nil {
+		return err
+	}
+	defer directory.Close()
+	if err := directory.Sync(); err != nil {
+		return fmt.Errorf("sync durable event journal directory: %w", err)
 	}
 	return nil
 }
