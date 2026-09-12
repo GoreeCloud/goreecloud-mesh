@@ -17,9 +17,11 @@ type SubscriberEventHandler func(context.Context, DurableEventRecord) error
 // The returned processed count includes only events whose handler completed and
 // whose durable checkpoint was successfully advanced. A handler or checkpoint
 // persistence failure stops the batch immediately. Replay passes sharing one
-// checkpoint store are serialized within the current runtime so concurrent
-// calls cannot race the same durable checkpoint; this is not a cross-process
-// locking or delivery guarantee.
+// checkpoint state path are serialized first inside the current runtime and then,
+// on supported Unix platforms, by a kernel-held process lock. Waiting remains
+// context-aware. Unsupported platforms fail closed rather than silently dropping
+// cross-process ownership. This ownership boundary does not prove handler side
+// effects, remote delivery, acknowledgement transport, or exactly-once behavior.
 func ReplaySubscriber(
 	ctx context.Context,
 	subscriberID string,
@@ -43,10 +45,13 @@ func ReplaySubscriber(
 	if err := ctx.Err(); err != nil {
 		return 0, 0, err
 	}
-	if err := checkpoints.acquireReplay(ctx); err != nil {
+	ownership, err := checkpoints.acquireReplayOwnership(ctx)
+	if err != nil {
 		return 0, 0, err
 	}
-	defer checkpoints.releaseReplay()
+	defer func() {
+		err = errors.Join(err, checkpoints.releaseReplayOwnership(ownership))
+	}()
 	if err := ctx.Err(); err != nil {
 		return 0, 0, err
 	}
