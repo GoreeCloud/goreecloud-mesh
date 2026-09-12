@@ -16,7 +16,10 @@ type SubscriberEventHandler func(context.Context, DurableEventRecord) error
 //
 // The returned processed count includes only events whose handler completed and
 // whose durable checkpoint was successfully advanced. A handler or checkpoint
-// persistence failure stops the batch immediately.
+// persistence failure stops the batch immediately. Replay passes sharing one
+// checkpoint store are serialized within the current runtime so concurrent
+// calls cannot race the same durable checkpoint; this is not a cross-process
+// locking or delivery guarantee.
 func ReplaySubscriber(
 	ctx context.Context,
 	subscriberID string,
@@ -37,6 +40,13 @@ func ReplaySubscriber(
 	if handler == nil {
 		return 0, 0, errors.New("subscriber event handler is required")
 	}
+	if err := ctx.Err(); err != nil {
+		return 0, 0, err
+	}
+	if err := checkpoints.acquireReplay(ctx); err != nil {
+		return 0, 0, err
+	}
+	defer checkpoints.releaseReplay()
 	if err := ctx.Err(); err != nil {
 		return 0, 0, err
 	}
