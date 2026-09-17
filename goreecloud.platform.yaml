@@ -70,7 +70,7 @@ platform_systems:
     - WEBSITE.md
     - website/glaze.lock.json
     - docs/platform-conformance.json
-    notes: The standalone public Mesh website still carries a historical Glaze UI 2.2.0 source/published baseline. The current mandatory consumer target is GLAZE UI V1.5 / 1.5.0; the administrative Mesh Center and current product-level rendered/accessibility/resilience acceptance remain unfinished.
+    notes: The standalone public Mesh website still carries a historical Glaze UI 2.2.0 source/published baseline. The current mandatory consumer target is GLAZE UI V1.5 / 1.5.1; the administrative Mesh Center and current product-level rendered/accessibility/resilience acceptance remain unfinished.
   mesh:
     result: not-applicable-justified
     version: '0.3'
@@ -125,10 +125,10 @@ continuity:
 external_dependencies: []
 compatibility:
   platform_contract: '0.2'
-  glaze_ui_required: 1.5.0
+  glaze_ui_required: 1.5.1
   requires:
   - goreecloud-platform-contract==0.2
-  - glaze-ui==1.5.0
+  - glaze-ui==1.5.1
   provides:
   - mesh-api-v1
   - goreecloud-mesh-event-v1
@@ -161,7 +161,7 @@ conformance:
   - A deployed GoreeCloud Identity verifier, production workload issuance, and accepted authorization path remain pending.
   - Wardveil Security runtime evidence, event-consumer abuse controls, and Privacy Shield live governance acceptance remain pending.
   - Everkeep production backup, export, restore, corruption recovery, and recovery acceptance remain pending; the live lifecycle-event stream remains intentionally non-durable.
-  - The administrative Mesh Center and current GLAZE UI V1.5 / 1.5.0 product-level acceptance remain incomplete; the public site still uses a historical 2.2.0 source baseline.
+  - The administrative Mesh Center and current GLAZE UI V1.5 / 1.5.1 product-level acceptance remain incomplete; the public site still uses a historical 2.2.0 source baseline.
   - Development durable event journal, replay, subscriber checkpoints, strict persisted-state decoding, and same-host cross-process replay ownership are implemented and source-tested, but remote acknowledgement, retry/backoff, dead-letter handling, external side-effect idempotency, cross-host/distributed ownership, target-filesystem acceptance, and production delivery guarantees remain unimplemented or unaccepted.
   - Production Monitoring, Gateway, and Network adapters remain pending.
   - Target-environment runtime, rollback, failure-mode, publication, and production acceptance remain pending.
