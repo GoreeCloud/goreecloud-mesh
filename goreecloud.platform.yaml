@@ -40,7 +40,8 @@ platform_systems:
     - docs/platform-conformance.json
     - docs/privacy-everkeep.md
     - contracts/mesh.event.v1.json
-    notes: Source-level privacy authority, minimization, retention, and evidence boundaries exist. Current live lifecycle events remain minimized, non-durable coordination metadata; any durable retention or new data classes require accepted Privacy Shield purpose, retention, disclosure, and deletion governance.
+    - docs/durable-events.md
+    notes: Source-level privacy authority, minimization, retention, and evidence boundaries exist. The live lifecycle-event stream remains minimized and non-durable. The Development durable journal/checkpoint primitives are separate retained state and still require accepted Privacy Shield purpose, retention, disclosure, and deletion governance before production use.
   wardveil_security:
     result: applicable-migration-required
     version: null
@@ -57,7 +58,11 @@ platform_systems:
     - docs/everkeep.acceptance.json
     - docs/platform-conformance.json
     - contracts/mesh.event.v1.json
-    notes: Mesh has source-level continuity adoption and evidence contracts, but the lifecycle-event stream is intentionally non-durable and non-replayable. Durable event journal/checkpoint/recovery state and production backup, export, restore, corruption recovery, and current-contract Everkeep acceptance remain pending.
+    - docs/durable-events.md
+    - docs/replay-ownership.md
+    - internal/mesh/event_journal.go
+    - internal/mesh/subscriber_checkpoints.go
+    notes: Mesh has source-level continuity adoption and evidence contracts. The live lifecycle-event stream remains intentionally non-durable, while the current Development candidate adds bounded file-backed event-journal, replay, subscriber-checkpoint, and replay-ownership primitives. Production backup, export, restore, corruption recovery, filesystem suitability, and current-contract Everkeep acceptance remain pending.
   glaze_ui:
     result: applicable-migration-required
     version: 2.2.0
@@ -65,7 +70,7 @@ platform_systems:
     - WEBSITE.md
     - website/glaze.lock.json
     - docs/platform-conformance.json
-    notes: The standalone public Mesh website still carries a historical Glaze UI 2.2.0 source/published baseline. The current mandatory consumer target is GLAZE UI V1.3 / 1.3.0; the administrative Mesh Center and current product-level rendered/accessibility/resilience acceptance remain unfinished.
+    notes: The standalone public Mesh website still carries a historical Glaze UI 2.2.0 source/published baseline. The current mandatory consumer target is GLAZE UI V1.5 / 1.5.1; the administrative Mesh Center and current product-level rendered/accessibility/resilience acceptance remain unfinished.
   mesh:
     result: not-applicable-justified
     version: '0.3'
@@ -79,6 +84,8 @@ platform_systems:
     - platform-registry
     - evidence-plane
     - live-lifecycle-events
+    - durable-event-journal-development
+    - durable-subscriber-checkpoints-development
     dependencies: []
     published_events:
     - mesh.service.upserted.v1
@@ -100,13 +107,13 @@ continuity:
   backup:
     required: true
     requirements:
-    - Protect Mesh durable registry, relationship, source-attestation, runtime-evidence, evidence-envelope, and recovery-evidence state according to accepted Everkeep policy before production dependency.
-    - The current lifecycle-event bus is deliberately in-process and non-durable; no event history or subscriber state may be represented as protected durable state until a governed durable-event design is accepted.
+    - Protect Mesh durable registry, relationship, source-attestation, runtime-evidence, evidence-envelope, recovery-evidence, Development event-journal, and subscriber-checkpoint state according to accepted Everkeep and Privacy Shield policy before production dependency.
+    - The live lifecycle-event stream remains in-process and non-durable; Development journal/checkpoint primitives must not be represented as production-protected state until target backup, restore, corruption-recovery, retention, and filesystem acceptance are verified.
   restore:
     required: true
     requirements:
-    - Validate clean restoration, state integrity, API behavior, and accepted recovery evidence before production or Stable qualification.
-    - Any future durable event journal, checkpoints, retry/dead-letter state, or retained subscriber state must have explicit restore and replay semantics before activation.
+    - Validate clean restoration, state integrity, API behavior, replay/checkpoint integrity, and accepted recovery evidence before production or Stable qualification.
+    - The current Development journal/checkpoint primitives have explicit source-level replay semantics, but target-environment restoration, corruption recovery, and external side-effect reconciliation remain separate acceptance gates.
   export:
     required: true
     requirements:
@@ -118,14 +125,16 @@ continuity:
 external_dependencies: []
 compatibility:
   platform_contract: '0.2'
-  glaze_ui_required: 1.3.0
+  glaze_ui_required: 1.5.1
   requires:
   - goreecloud-platform-contract==0.2
-  - glaze-ui==1.3.0
+  - glaze-ui==1.5.1
   provides:
   - mesh-api-v1
   - goreecloud-mesh-event-v1
   - goreecloud-mesh-platform-registry-v1
+  - mesh-durable-event-journal-development
+  - mesh-durable-subscriber-checkpoints-development
 evidence:
   acceptance_tests: []
   release: []
@@ -136,18 +145,23 @@ conformance:
   - README.md
   - docs/api.md
   - docs/events.md
+  - docs/durable-events.md
+  - docs/replay-ownership.md
   - docs/platform-conformance.json
   - contracts/mesh.platform-evidence-plane.v1.json
   - contracts/mesh.identity-verification.json
   - contracts/mesh.event.v1.json
+  - internal/mesh/event_journal.go
+  - internal/mesh/subscriber_checkpoints.go
+  - internal/mesh/subscriber_replay.go
   - WEBSITE.md
   blockers:
   - GoreeCloud Mesh remains in Development and is not production or Stable accepted.
   - Manager source-level registry/event consumers exist, but accepted live Manager-to-Mesh runtime integration remains pending.
   - A deployed GoreeCloud Identity verifier, production workload issuance, and accepted authorization path remain pending.
   - Wardveil Security runtime evidence, event-consumer abuse controls, and Privacy Shield live governance acceptance remain pending.
-  - Everkeep production backup, export, restore, and recovery acceptance remain pending; current lifecycle events are intentionally non-durable.
-  - The administrative Mesh Center and current GLAZE UI V1.3 / 1.3.0 product-level acceptance remain incomplete; the public site still uses a historical 2.2.0 source baseline.
-  - Durable event journal/replay/checkpoints/retry/dead-letter/retention/order/idempotency semantics and cross-process/cross-host delivery remain unimplemented.
+  - Everkeep production backup, export, restore, corruption recovery, and recovery acceptance remain pending; the live lifecycle-event stream remains intentionally non-durable.
+  - The administrative Mesh Center and current GLAZE UI V1.5 / 1.5.1 product-level acceptance remain incomplete; the public site still uses a historical 2.2.0 source baseline.
+  - Development durable event journal, replay, subscriber checkpoints, strict persisted-state decoding, and same-host cross-process replay ownership are implemented and source-tested, but remote acknowledgement, retry/backoff, dead-letter handling, external side-effect idempotency, cross-host/distributed ownership, target-filesystem acceptance, and production delivery guarantees remain unimplemented or unaccepted.
   - Production Monitoring, Gateway, and Network adapters remain pending.
   - Target-environment runtime, rollback, failure-mode, publication, and production acceptance remain pending.

@@ -8,6 +8,8 @@ on:
       - README.md
       - docs/platform-conformance.json
       - docs/events.md
+      - docs/durable-events.md
+      - docs/replay-ownership.md
       - contracts/mesh.event.v1.json
   push:
     branches:
@@ -18,6 +20,8 @@ on:
       - README.md
       - docs/platform-conformance.json
       - docs/events.md
+      - docs/durable-events.md
+      - docs/replay-ownership.md
       - contracts/mesh.event.v1.json
   workflow_dispatch:
 
@@ -26,6 +30,6 @@ permissions:
 
 jobs:
   validate:
-    uses: GoreeCloud/GoreeCloud/.github/workflows/reusable-platform-manifest.yml@3204afc4f603f3b29a456f01cbb28755d7f7bd00
+    uses: GoreeCloud/GoreeCloud/.github/workflows/reusable-platform-manifest.yml@981c5807f249955e9f2c6c5d9136c9ed9c8017e9
     with:
       manifest-path: goreecloud.platform.yaml
